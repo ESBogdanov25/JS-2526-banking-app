@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Money - FinSim</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="../index.html"><h1>FinSim</h1></a>
+            </div>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="accounts.html" class="nav-link">Accounts</a>
+                <a href="transfer.html" class="nav-link active">Transfer</a>
+                <a href="transactions.html" class="nav-link">Transactions</a>
+                <a href="../auth/login.html" class="nav-link">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="user-profile">
+                <div class="user-avatar">JD</div>
+                <div class="user-info">
+                    <h4>John Doe</h4>
+                    <p>Premium Banking</p>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="accounts.html" class="nav-item">
+                    <span>💳</span> Accounts
+                </a>
+                <a href="transfer.html" class="nav-item active">
+                    <span>🔄</span> Transfer Money
+                </a>
+                <a href="transactions.html" class="nav-item">
+                    <span>📝</span> Transactions
+                </a>
+                <a href="../auth/login.html" class="nav-item">
+                    <span>🚪</span> Logout
+                </a>
+            </nav>
+        </aside>
+
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <h1>Transfer Money</h1>
+                <p>Send money between your accounts or to other users</p>
+            </div>
+
+            <div class="transfer-container">
+                <div class="transfer-form-card">
+                    <h3>New Transfer</h3>
+                    <form class="transfer-form" id="transferForm">
+                        <div class="form-group">
+                            <label for="fromAccount">From Account</label>
+                            <select id="fromAccount" name="fromAccount" required>
+                                <option value="">Select account</option>
+                                <option value="checking">Checking Account (****4567) - $8,245.50</option>
+                                <option value="savings">Savings Account (****8910) - $4,213.25</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="toAccount">To Account</label>
+                            <select id="toAccount" name="toAccount" required>
+                                <option value="">Select account</option>
+                                <option value="savings">My Savings Account (****8910)</option>
+                                <option value="investment">My Investment Account (****1122)</option>
+                                <option value="external">Another User</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="externalAccountGroup" style="display: none;">
+                            <label for="externalAccount">Recipient Email</label>
+                            <input type="email" id="externalAccount" name="externalAccount" placeholder="Enter recipient's email">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="amount">Amount</label>
+                            <input type="number" id="amount" name="amount" min="0.01" step="0.01" placeholder="0.00" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <input type="text" id="description" name="description" placeholder="Optional description">
+                        </div>
+
+                        <div class="transfer-summary">
+                            <div class="summary-item">
+                                <span>Transfer Fee:</span>
+                                <span>$0.00</span>
+                            </div>
+                            <div class="summary-item total">
+                                <span>Total Amount:</span>
+                                <span id="totalAmount">$0.00</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-full">Continue Transfer</button>
+                    </form>
+                </div>
+
+                <div class="transfer-info-card">
+                    <h3>Transfer Limits</h3>
+                    <div class="limit-info">
+                        <div class="limit-item">
+                            <span>Daily Limit</span>
+                            <span>$5,000.00</span>
+                        </div>
+                        <div class="limit-item">
+                            <span>Monthly Limit</span>
+                            <span>$25,000.00</span>
+                        </div>
+                        <div class="limit-item">
+                            <span>Available Today</span>
+                            <span class="positive">$5,000.00</span>
+                        </div>
+                    </div>
+
+                    <div class="recent-transfers">
+                        <h4>Recent Transfers</h4>
+                        <div class="transfer-list">
+                            <div class="transfer-item">
+                                <div class="transfer-details">
+                                    <p>To Savings Account</p>
+                                    <small>Yesterday, 2:30 PM</small>
+                                </div>
+                                <div class="transfer-amount">$500.00</div>
+                            </div>
+                            <div class="transfer-item">
+                                <div class="transfer-details">
+                                    <p>To Investment Account</p>
+                                    <small>Oct 5, 2024</small>
+                                </div>
+                                <div class="transfer-amount">$1,000.00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

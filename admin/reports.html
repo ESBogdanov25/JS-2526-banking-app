@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - FinSim</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="../index.html"><h1>FinSim</h1></a>
+            </div>
+            <div class="nav-links">
+                <span class="nav-user">Admin User</span>
+                <a href="../dashboard/dashboard.html" class="nav-link">User View</a>
+                <a href="../auth/login.html" class="nav-link">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="admin-profile">
+                <div class="admin-avatar">AU</div>
+                <div class="admin-info">
+                    <h4>Admin User</h4>
+                    <p>System Administrator</p>
+                </div>
+            </div>
+            
+            <nav class="admin-nav">
+                <a href="admin.html" class="admin-nav-item">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="users.html" class="admin-nav-item">
+                    <span>👥</span> User Management
+                </a>
+                <a href="reports.html" class="admin-nav-item active">
+                    <span>📈</span> Reports
+                </a>
+                <a href="../dashboard/dashboard.html" class="admin-nav-item">
+                    <span>👤</span> User View
+                </a>
+                <a href="../auth/login.html" class="admin-nav-item">
+                    <span>🚪</span> Logout
+                </a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <div class="header-content">
+                    <h1>System Reports</h1>
+                    <p>Analytics and system performance reports</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary">Export Data</button>
+                    <button class="btn btn-primary">Generate Report</button>
+                </div>
+            </div>
+
+            <div class="reports-controls">
+                <div class="date-range">
+                    <label>Date Range:</label>
+                    <input type="date" value="2024-10-01">
+                    <span>to</span>
+                    <input type="date" value="2024-10-30">
+                </div>
+                <div class="report-type">
+                    <select class="filter-select">
+                        <option>Financial Overview</option>
+                        <option>User Activity</option>
+                        <option>Transaction Analysis</option>
+                        <option>Fraud Detection</option>
+                        <option>System Performance</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="reports-grid">
+                <div class="report-card wide">
+                    <h3>Financial Overview</h3>
+                    <div class="chart-placeholder">
+                        <p>📈 Chart: Monthly Revenue & Growth</p>
+                        <p>Bar chart showing financial trends would appear here</p>
+                    </div>
+                </div>
+
+                <div class="report-card">
+                    <h3>User Growth</h3>
+                    <div class="chart-placeholder">
+                        <p>👥 User Acquisition</p>
+                        <p>Line chart showing new users over time</p>
+                    </div>
+                </div>
+
+                <div class="report-card">
+                    <h3>Transaction Volume</h3>
+                    <div class="chart-placeholder">
+                        <p>🔄 Daily Transactions</p>
+                        <p>Area chart showing transaction patterns</p>
+                    </div>
+                </div>
+
+                <div class="report-card">
+                    <h3>Fraud Alerts</h3>
+                    <div class="chart-placeholder">
+                        <p>🛡️ Security Metrics</p>
+                        <p>Pie chart showing alert types</p>
+                    </div>
+                </div>
+
+                <div class="report-card wide">
+                    <h3>Key Metrics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Active Users</span>
+                            <span class="metric-value">1,247</span>
+                            <span class="metric-change positive">+12%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Total Transactions</span>
+                            <span class="metric-value">45,892</span>
+                            <span class="metric-change positive">+8%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Avg. Balance</span>
+                            <span class="metric-value">$18,450</span>
+                            <span class="metric-change positive">+5%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Fraud Rate</span>
+                            <span class="metric-value">0.03%</span>
+                            <span class="metric-change negative">+0.01%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">System Uptime</span>
+                            <span class="metric-value">99.98%</span>
+                            <span class="metric-change positive">+0.02%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Response Time</span>
+                            <span class="metric-value">128ms</span>
+                            <span class="metric-change positive">-12ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reports-export">
+                <h3>Export Reports</h3>
+                <div class="export-options">
+                    <button class="export-btn">
+                        <span>📊</span>
+                        <span>Financial Report</span>
+                        <small>PDF Format</small>
+                    </button>
+                    <button class="export-btn">
+                        <span>👥</span>
+                        <span>User Analytics</span>
+                        <small>CSV Format</small>
+                    </button>
+                    <button class="export-btn">
+                        <span>🔄</span>
+                        <span>Transaction Log</span>
+                        <small>Excel Format</small>
+                    </button>
+                    <button class="export-btn">
+                        <span>🛡️</span>
+                        <span>Security Report</span>
+                        <small>PDF Format</small>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/admin.js"></script>
+</body>
+</html>

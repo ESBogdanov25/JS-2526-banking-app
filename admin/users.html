@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - FinSim</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="../index.html"><h1>FinSim</h1></a>
+            </div>
+            <div class="nav-links">
+                <span class="nav-user">Admin User</span>
+                <a href="../dashboard/dashboard.html" class="nav-link">User View</a>
+                <a href="../auth/login.html" class="nav-link">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="admin-profile">
+                <div class="admin-avatar">AU</div>
+                <div class="admin-info">
+                    <h4>Admin User</h4>
+                    <p>System Administrator</p>
+                </div>
+            </div>
+            
+            <nav class="admin-nav">
+                <a href="admin.html" class="admin-nav-item">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="users.html" class="admin-nav-item active">
+                    <span>👥</span> User Management
+                </a>
+                <a href="reports.html" class="admin-nav-item">
+                    <span>📈</span> Reports
+                </a>
+                <a href="../dashboard/dashboard.html" class="admin-nav-item">
+                    <span>👤</span> User View
+                </a>
+                <a href="../auth/login.html" class="admin-nav-item">
+                    <span>🚪</span> Logout
+                </a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <div class="header-content">
+                    <h1>User Management</h1>
+                    <p>Manage system users and permissions</p>
+                </div>
+                <button class="btn btn-primary">Add New User</button>
+            </div>
+
+            <div class="users-controls">
+                <div class="search-box">
+                    <input type="text" placeholder="Search users...">
+                    <button class="search-btn">🔍</button>
+                </div>
+                <div class="filter-group">
+                    <select class="filter-select">
+                        <option>All Users</option>
+                        <option>Active</option>
+                        <option>Inactive</option>
+                        <option>Admin</option>
+                    </select>
+                    <select class="filter-select">
+                        <option>Sort by: Recent</option>
+                        <option>Sort by: Name</option>
+                        <option>Sort by: Balance</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Balance</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar-small">JD</div>
+                                    <div class="user-info-small">
+                                        <p class="user-name">John Doe</p>
+                                        <p class="user-id">ID: 1001</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>john.doe@email.com</td>
+                            <td><span class="role-badge user">User</span></td>
+                            <td><span class="status-badge active">Active</span></td>
+                            <td>$28,208.75</td>
+                            <td>Today, 10:15 AM</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon" title="Edit">✏️</button>
+                                    <button class="btn-icon" title="View">👁️</button>
+                                    <button class="btn-icon" title="Delete">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar-small">JS</div>
+                                    <div class="user-info-small">
+                                        <p class="user-name">Jane Smith</p>
+                                        <p class="user-id">ID: 1002</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>jane.smith@email.com</td>
+                            <td><span class="role-badge user">User</span></td>
+                            <td><span class="status-badge active">Active</span></td>
+                            <td>$15,420.30</td>
+                            <td>Yesterday, 3:45 PM</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon" title="Edit">✏️</button>
+                                    <button class="btn-icon" title="View">👁️</button>
+                                    <button class="btn-icon" title="Delete">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar-small">RJ</div>
+                                    <div class="user-info-small">
+                                        <p class="user-name">Robert Johnson</p>
+                                        <p class="user-id">ID: 1003</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>robert.j@email.com</td>
+                            <td><span class="role-badge admin">Admin</span></td>
+                            <td><span class="status-badge active">Active</span></td>
+                            <td>$42,150.00</td>
+                            <td>Today, 8:30 AM</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon" title="Edit">✏️</button>
+                                    <button class="btn-icon" title="View">👁️</button>
+                                    <button class="btn-icon" title="Delete">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar-small">MS</div>
+                                    <div class="user-info-small">
+                                        <p class="user-name">Maria Garcia</p>
+                                        <p class="user-id">ID: 1004</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>maria.g@email.com</td>
+                            <td><span class="role-badge user">User</span></td>
+                            <td><span class="status-badge inactive">Inactive</span></td>
+                            <td>$8,750.00</td>
+                            <td>Sep 15, 2024</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon" title="Edit">✏️</button>
+                                    <button class="btn-icon" title="View">👁️</button>
+                                    <button class="btn-icon" title="Delete">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer">
+                <div class="pagination-info">
+                    Showing 1-4 of 1,247 users
+                </div>
+                <div class="pagination">
+                    <button class="pagination-btn">Previous</button>
+                    <button class="pagination-btn active">1</button>
+                    <button class="pagination-btn">2</button>
+                    <button class="pagination-btn">3</button>
+                    <button class="pagination-btn">Next</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/admin.js"></script>
+</body>
+</html>

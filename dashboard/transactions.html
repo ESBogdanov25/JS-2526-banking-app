@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions - FinSim</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="../index.html"><h1>FinSim</h1></a>
+            </div>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="accounts.html" class="nav-link">Accounts</a>
+                <a href="transfer.html" class="nav-link">Transfer</a>
+                <a href="transactions.html" class="nav-link active">Transactions</a>
+                <a href="../auth/login.html" class="nav-link">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="user-profile">
+                <div class="user-avatar">JD</div>
+                <div class="user-info">
+                    <h4>John Doe</h4>
+                    <p>Premium Banking</p>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="accounts.html" class="nav-item">
+                    <span>💳</span> Accounts
+                </a>
+                <a href="transfer.html" class="nav-item">
+                    <span>🔄</span> Transfer Money
+                </a>
+                <a href="transactions.html" class="nav-item active">
+                    <span>📝</span> Transactions
+                </a>
+                <a href="../auth/login.html" class="nav-item">
+                    <span>🚪</span> Logout
+                </a>
+            </nav>
+        </aside>
+
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <h1>Transaction History</h1>
+                <p>View and manage all your transactions</p>
+            </div>
+
+            <div class="transactions-controls">
+                <div class="filter-group">
+                    <select class="filter-select">
+                        <option>All Accounts</option>
+                        <option>Checking Account</option>
+                        <option>Savings Account</option>
+                    </select>
+                    <select class="filter-select">
+                        <option>All Transactions</option>
+                        <option>Income</option>
+                        <option>Expenses</option>
+                        <option>Transfers</option>
+                    </select>
+                    <input type="date" class="filter-select" placeholder="From Date">
+                    <input type="date" class="filter-select" placeholder="To Date">
+                </div>
+                <button class="btn btn-secondary">Export CSV</button>
+            </div>
+
+            <div class="transactions-list">
+                <div class="transaction-header">
+                    <span>Description</span>
+                    <span>Date</span>
+                    <span>Amount</span>
+                    <span>Status</span>
+                </div>
+
+                <div class="transaction-row">
+                    <div class="transaction-desc">
+                        <div class="transaction-icon">🛒</div>
+                        <div>
+                            <p class="desc-main">Grocery Store</p>
+                            <p class="desc-sub">Debit Card Purchase</p>
+                        </div>
+                    </div>
+                    <div class="transaction-date">
+                        <p>Today</p>
+                        <p>10:30 AM</p>
+                    </div>
+                    <div class="transaction-amount negative">-$85.75</div>
+                    <div class="transaction-status completed">Completed</div>
+                </div>
+
+                <div class="transaction-row">
+                    <div class="transaction-desc">
+                        <div class="transaction-icon">💰</div>
+                        <div>
+                            <p class="desc-main">Salary Deposit</p>
+                            <p class="desc-sub">Monthly Salary</p>
+                        </div>
+                    </div>
+                    <div class="transaction-date">
+                        <p>Yesterday</p>
+                        <p>9:00 AM</p>
+                    </div>
+                    <div class="transaction-amount positive">+$4,250.00</div>
+                    <div class="transaction-status completed">Completed</div>
+                </div>
+
+                <div class="transaction-row">
+                    <div class="transaction-desc">
+                        <div class="transaction-icon">🏠</div>
+                        <div>
+                            <p class="desc-main">Rent Payment</p>
+                            <p class="desc-sub">Monthly Rent</p>
+                        </div>
+                    </div>
+                    <div class="transaction-date">
+                        <p>Oct 1, 2024</p>
+                        <p>8:00 AM</p>
+                    </div>
+                    <div class="transaction-amount negative">-$1,200.00</div>
+                    <div class="transaction-status completed">Completed</div>
+                </div>
+
+                <div class="transaction-row">
+                    <div class="transaction-desc">
+                        <div class="transaction-icon">🔄</div>
+                        <div>
+                            <p class="desc-main">Transfer to Savings</p>
+                            <p class="desc-sub">Internal Transfer</p>
+                        </div>
+                    </div>
+                    <div class="transaction-date">
+                        <p>Sep 28, 2024</p>
+                        <p>2:30 PM</p>
+                    </div>
+                    <div class="transaction-amount negative">-$500.00</div>
+                    <div class="transaction-status completed">Completed</div>
+                </div>
+
+                <div class="transaction-row">
+                    <div class="transaction-desc">
+                        <div class="transaction-icon">☕</div>
+                        <div>
+                            <p class="desc-main">Coffee Shop</p>
+                            <p class="desc-sub">Debit Card Purchase</p>
+                        </div>
+                    </div>
+                    <div class="transaction-date">
+                        <p>Sep 27, 2024</p>
+                        <p>8:15 AM</p>
+                    </div>
+                    <div class="transaction-amount negative">-$4.50</div>
+                    <div class="transaction-status completed">Completed</div>
+                </div>
+            </div>
+
+            <div class="pagination">
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn next">Next</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - FinSim</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="../index.html"><h1>FinSim</h1></a>
+            </div>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link active">Dashboard</a>
+                <a href="accounts.html" class="nav-link">Accounts</a>
+                <a href="transfer.html" class="nav-link">Transfer</a>
+                <a href="transactions.html" class="nav-link">Transactions</a>
+                <a href="../auth/login.html" class="nav-link">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="user-profile">
+                <div class="user-avatar">JD</div>
+                <div class="user-info">
+                    <h4>John Doe</h4>
+                    <p>Premium Banking</p>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item active">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="accounts.html" class="nav-item">
+                    <span>💳</span> Accounts
+                </a>
+                <a href="transfer.html" class="nav-item">
+                    <span>🔄</span> Transfer Money
+                </a>
+                <a href="transactions.html" class="nav-item">
+                    <span>📝</span> Transactions
+                </a>
+                <a href="../auth/login.html" class="nav-item">
+                    <span>🚪</span> Logout
+                </a>
+            </nav>
+        </aside>
+
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <h1>Dashboard</h1>
+                <p>Welcome back, John! Here's your financial overview.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <h3>Total Balance</h3>
+                        <p class="stat-amount">$12,458.75</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-info">
+                        <h3>Monthly Income</h3>
+                        <p class="stat-amount">$4,250.00</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📉</div>
+                    <div class="stat-info">
+                        <h3>Monthly Expenses</h3>
+                        <p class="stat-amount">$2,875.50</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-info">
+                        <h3>Savings Goal</h3>
+                        <p class="stat-amount">75%</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="content-row">
+                    <div class="content-card">
+                        <h3>Recent Transactions</h3>
+                        <div class="transaction-list">
+                            <div class="transaction-item">
+                                <div class="transaction-info">
+                                    <div class="transaction-icon">🛒</div>
+                                    <div>
+                                        <p class="transaction-desc">Grocery Store</p>
+                                        <p class="transaction-date">Today, 10:30 AM</p>
+                                    </div>
+                                </div>
+                                <div class="transaction-amount negative">-$85.75</div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="transaction-info">
+                                    <div class="transaction-icon">💰</div>
+                                    <div>
+                                        <p class="transaction-desc">Salary Deposit</p>
+                                        <p class="transaction-date">Yesterday, 9:00 AM</p>
+                                    </div>
+                                </div>
+                                <div class="transaction-amount positive">+$4,250.00</div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="transaction-info">
+                                    <div class="transaction-icon">🏠</div>
+                                    <div>
+                                        <p class="transaction-desc">Rent Payment</p>
+                                        <p class="transaction-date">Oct 1, 2024</p>
+                                    </div>
+                                </div>
+                                <div class="transaction-amount negative">-$1,200.00</div>
+                            </div>
+                        </div>
+                        <a href="transactions.html" class="view-all-link">View All Transactions</a>
+                    </div>
+
+                    <div class="content-card">
+                        <h3>Quick Actions</h3>
+                        <div class="quick-actions">
+                            <a href="transfer.html" class="quick-action">
+                                <span>🔄</span>
+                                <span>Transfer Money</span>
+                            </a>
+                            <a href="accounts.html" class="quick-action">
+                                <span>💳</span>
+                                <span>View Accounts</span>
+                            </a>
+                            <a href="#" class="quick-action">
+                                <span>📊</span>
+                                <span>Analytics</span>
+                            </a>
+                            <a href="#" class="quick-action">
+                                <span>⚙️</span>
+                                <span>Settings</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

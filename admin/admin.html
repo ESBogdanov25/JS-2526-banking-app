@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - FinSim</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="../index.html"><h1>FinSim</h1></a>
+            </div>
+            <div class="nav-links">
+                <span class="nav-user">Admin User</span>
+                <a href="../dashboard/dashboard.html" class="nav-link">User View</a>
+                <a href="../auth/login.html" class="nav-link">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <div class="admin-profile">
+                <div class="admin-avatar">AU</div>
+                <div class="admin-info">
+                    <h4>Admin User</h4>
+                    <p>System Administrator</p>
+                </div>
+            </div>
+            
+            <nav class="admin-nav">
+                <a href="admin.html" class="admin-nav-item active">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="users.html" class="admin-nav-item">
+                    <span>👥</span> User Management
+                </a>
+                <a href="reports.html" class="admin-nav-item">
+                    <span>📈</span> Reports
+                </a>
+                <a href="../dashboard/dashboard.html" class="admin-nav-item">
+                    <span>👤</span> User View
+                </a>
+                <a href="../auth/login.html" class="admin-nav-item">
+                    <span>🚪</span> Logout
+                </a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>Admin Dashboard</h1>
+                <p>System overview and management</p>
+            </div>
+
+            <div class="admin-stats-grid">
+                <div class="admin-stat-card">
+                    <div class="stat-header">
+                        <h3>Total Users</h3>
+                        <span class="stat-change positive">+12%</span>
+                    </div>
+                    <p class="stat-number">1,247</p>
+                    <p class="stat-description">Active users in system</p>
+                </div>
+
+                <div class="admin-stat-card">
+                    <div class="stat-header">
+                        <h3>Total Transactions</h3>
+                        <span class="stat-change positive">+8%</span>
+                    </div>
+                    <p class="stat-number">45,892</p>
+                    <p class="stat-description">Transactions this month</p>
+                </div>
+
+                <div class="admin-stat-card">
+                    <div class="stat-header">
+                        <h3>System Revenue</h3>
+                        <span class="stat-change positive">+15%</span>
+                    </div>
+                    <p class="stat-number">$124,580</p>
+                    <p class="stat-description">Total system value</p>
+                </div>
+
+                <div class="admin-stat-card">
+                    <div class="stat-header">
+                        <h3>Fraud Alerts</h3>
+                        <span class="stat-change negative">+3</span>
+                    </div>
+                    <p class="stat-number">12</p>
+                    <p class="stat-description">Active alerts</p>
+                </div>
+            </div>
+
+            <div class="admin-content-grid">
+                <div class="admin-card">
+                    <h3>Recent System Activity</h3>
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <div class="activity-icon">👤</div>
+                            <div class="activity-details">
+                                <p>New user registration</p>
+                                <small>John Smith - 2 minutes ago</small>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">🔄</div>
+                            <div class="activity-details">
+                                <p>Large transfer processed</p>
+                                <small>$5,000 transfer - 15 minutes ago</small>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">⚠️</div>
+                            <div class="activity-details">
+                                <p>Fraud alert triggered</p>
+                                <small>User ID: 4587 - 1 hour ago</small>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">📊</div>
+                            <div class="activity-details">
+                                <p>Monthly report generated</p>
+                                <small>System report - 2 hours ago</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h3>Quick Actions</h3>
+                    <div class="quick-actions-grid">
+                        <a href="users.html" class="admin-quick-action">
+                            <span>👥</span>
+                            <span>Manage Users</span>
+                        </a>
+                        <a href="reports.html" class="admin-quick-action">
+                            <span>📈</span>
+                            <span>View Reports</span>
+                        </a>
+                        <a href="#" class="admin-quick-action">
+                            <span>⚙️</span>
+                            <span>System Settings</span>
+                        </a>
+                        <a href="#" class="admin-quick-action">
+                            <span>🛡️</span>
+                            <span>Security Logs</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/admin.js"></script>
+</body>
+</html>
