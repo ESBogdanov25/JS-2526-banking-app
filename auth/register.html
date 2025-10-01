@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>Register - FinSim</title>
+
+    <link rel="icon" type="image/png" href="../assets/images/logo.png">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/auth.css">
 </head>
@@ -28,39 +31,39 @@
             <form class="auth-form" id="registerForm">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" name="firstName" required>
+                        <label for="firstName" class="form-label">First Name</label>
+                        <input type="text" id="firstName" name="firstName" class="form-input" placeholder="John" required>
                     </div>
                     <div class="form-group">
-                        <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" name="lastName" required>
+                        <label for="lastName" class="form-label">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" class="form-input" placeholder="Doe" required>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" required>
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="john.doe@example.com" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Create a strong password" required>
                     <div class="password-strength"></div>
                 </div>
 
                 <div class="form-group">
-                    <label for="confirmPassword">Confirm Password</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    <label for="confirmPassword" class="form-label">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" placeholder="Confirm your password" required>
                 </div>
 
                 <div class="form-options">
-                    <label class="checkbox">
-                        <input type="checkbox" name="terms" required>
-                        <span>I agree to the Terms of Service and Privacy Policy</span>
-                    </label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="terms" class="checkbox" required>
+                        <label for="terms" class="checkbox-label">I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a></label>
+                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+                <button type="submit" class="auth-btn">Create Your Account</button>
             </form>
 
             <div class="auth-footer">

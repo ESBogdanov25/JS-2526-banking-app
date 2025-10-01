@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>Login - FinSim</title>
+
+    <link rel="icon" type="image/png" href="../assets/images/logo.png">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/auth.css">
 </head>
@@ -27,24 +30,25 @@
             
             <form class="auth-form" id="loginForm">
                 <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" required>
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required>
+                    <div class="password-strength"></div>
                 </div>
 
                 <div class="form-options">
-                    <label class="checkbox">
-                        <input type="checkbox" name="remember">
-                        <span>Remember me</span>
-                    </label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="remember" class="checkbox">
+                        <label for="remember" class="checkbox-label">Remember me</label>
+                    </div>
                     <a href="#" class="forgot-password">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+                <button type="submit" class="auth-btn">Sign In to Your Account</button>
             </form>
 
             <div class="auth-footer">
