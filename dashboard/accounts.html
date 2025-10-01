@@ -14,11 +14,11 @@
                 <a href="../index.html"><h1>FinSim</h1></a>
             </div>
             <div class="nav-links">
-                <a href="dashboard.html" class="nav-link">Dashboard</a>
-                <a href="accounts.html" class="nav-link active">Accounts</a>
-                <a href="transfer.html" class="nav-link">Transfer</a>
-                <a href="transactions.html" class="nav-link">Transactions</a>
-                <a href="../auth/login.html" class="nav-link">Logout</a>
+                <a href="dashboard.html" class="nav-link" data-nav="/dashboard/dashboard.html">Dashboard</a>
+                <a href="accounts.html" class="nav-link active" data-nav="/dashboard/accounts.html">Accounts</a>
+                <a href="transfer.html" class="nav-link" data-nav="/dashboard/transfer.html">Transfer</a>
+                <a href="transactions.html" class="nav-link" data-nav="/dashboard/transactions.html">Transactions</a>
+                <a href="../auth/login.html" class="nav-link" data-logout="true" data-auth-ui="authenticated">Logout</a>
             </div>
         </nav>
     </header>
@@ -34,19 +34,19 @@
             </div>
             
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">
+                <a href="dashboard.html" class="nav-item" data-nav="/dashboard/dashboard.html">
                     <span>📊</span> Dashboard
                 </a>
-                <a href="accounts.html" class="nav-item active">
+                <a href="accounts.html" class="nav-item active" data-nav="/dashboard/accounts.html">
                     <span>💳</span> Accounts
                 </a>
-                <a href="transfer.html" class="nav-item">
+                <a href="transfer.html" class="nav-item" data-nav="/dashboard/transfer.html">
                     <span>🔄</span> Transfer Money
                 </a>
-                <a href="transactions.html" class="nav-item">
+                <a href="transactions.html" class="nav-item" data-nav="/dashboard/transactions.html">
                     <span>📝</span> Transactions
                 </a>
-                <a href="../auth/login.html" class="nav-item">
+                <a href="../auth/login.html" class="nav-item" data-logout="true" data-auth-ui="authenticated">
                     <span>🚪</span> Logout
                 </a>
             </nav>

@@ -18,7 +18,10 @@
             </div>
             <div class="nav-links">
                 <a href="../index.html" class="nav-link" data-nav="/index.html">Home</a>
-                <a href="register.html" class="nav-link" data-nav="/auth/register.html">Sign Up</a>
+                <a href="register.html" class="nav-link" data-nav="/auth/register.html" data-auth-ui="unauthenticated">Sign Up</a>
+
+                <a href="../dashboard/dashboard.html" class="nav-link" data-nav="/dashboard/dashboard.html" data-auth-ui="authenticated" style="display: none;">Dashboard</a>
+                <a href="../auth/login.html" class="nav-link" data-logout="true" data-auth-ui="authenticated" style="display: none;">Logout</a>
             </div>
         </nav>
     </header>
