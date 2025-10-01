@@ -1,6 +1,8 @@
+// js/auth.js
+
 /**
- * FinSim - Authentication System
- * Handles user registration, login, logout, and session management
+ * FinSim - Professional Authentication System
+ * Enterprise-grade async/await patterns with proper error handling
  */
 
 class AuthManager {
@@ -14,263 +16,313 @@ class AuthManager {
     /**
      * Initialize authentication system
      */
-    init() {
-        // Check if user is already logged in
-        this.currentUser = this.storage.get('currentUser');
-        
-        if (this.currentUser) {
-            console.log('🔐 User session restored:', this.currentUser.email);
-            this.updateUserLoginTime();
-        } else {
-            console.log('🔐 No active user session');
+    async init() {
+        try {
+            this.currentUser = await this.storage.get('currentUser');
+            
+            if (this.currentUser) {
+                console.log('🔐 User session restored:', this.currentUser.email);
+                await this.updateUserLoginTime();
+            } else {
+                console.log('🔐 No active user session');
+            }
+        } catch (error) {
+            console.error('❌ Auth initialization failed:', error);
+            this.currentUser = null;
         }
     }
 
     /**
-     * Register a new user
+     * Register a new user with comprehensive validation
      */
     async register(userData) {
         try {
-            // Validate input
-            if (!this.validateRegistration(userData)) {
-                throw new Error('Please fill in all required fields');
-            }
+            // Input validation pipeline
+            await this.validateRegistrationData(userData);
+            await this.checkUserExists(userData.email);
+            await this.validatePasswordStrength(userData.password);
+            await this.confirmPasswordMatch(userData.password, userData.confirmPassword);
 
-            // Check if user already exists
-            const existingUser = this.dataManager.getUserByEmail(userData.email);
-            if (existingUser) {
-                throw new Error('User with this email already exists');
-            }
-
-            // Validate password strength
-            if (!this.validatePassword(userData.password)) {
-                throw new Error('Password must be at least 6 characters long');
-            }
-
-            // Check password confirmation
-            if (userData.password !== userData.confirmPassword) {
-                throw new Error('Passwords do not match');
-            }
-
-            // Create new user
-            const newUser = this.dataManager.createUser({
-                email: userData.email,
-                password: this.hashPassword(userData.password), // Basic hashing
-                firstName: userData.firstName,
-                lastName: userData.lastName
-            });
-
-            // Create default accounts for new user
-            this.createDefaultAccounts(newUser.id);
-
-            // Auto-login after registration
-            this.login(userData.email, userData.password);
-
-            return {
-                success: true,
-                user: newUser,
-                message: 'Registration successful!'
-            };
-
-        } catch (error) {
-            return {
-                success: false,
-                message: error.message
-            };
-        }
-    }
-
-    /**
-     * Login user
-     */
-    async login(email, password) {
-        try {
-            // Validate input
-            if (!email || !password) {
-                throw new Error('Please enter both email and password');
-            }
-
-            // Find user by email
-            const user = this.dataManager.getUserByEmail(email);
-            if (!user) {
-                throw new Error('Invalid email or password');
-            }
-
-            // Check if user is active
-            if (!user.isActive) {
-                throw new Error('Account is deactivated. Please contact support.');
-            }
-
-            // Verify password (basic comparison - will be enhanced)
-            if (!this.verifyPassword(password, user.password)) {
-                throw new Error('Invalid email or password');
-            }
-
-            // Update last login time
-            this.dataManager.updateUser(user.id, {
-                lastLogin: new Date().toISOString()
-            });
-
-            // Set current user session
-            this.currentUser = user;
-            this.storage.set('currentUser', user.toJSON());
-
-            console.log('🔐 User logged in:', user.email);
+            // Create user account
+            const newUser = await this.createUserAccount(userData);
+            
+            // Setup user environment
+            await this.setupUserEnvironment(newUser.id);
+            
+            // Auto-login after successful registration
+            const loginResult = await this.login(userData.email, userData.password);
             
             return {
                 success: true,
-                user: user,
-                message: 'Login successful!'
+                user: newUser,
+                message: '🎉 Registration successful! Welcome to FinSim.',
+                redirect: '/dashboard/dashboard.html'
             };
 
         } catch (error) {
+            console.error('❌ Registration failed:', error);
             return {
                 success: false,
-                message: error.message
+                message: error.message,
+                error: error.name
             };
         }
     }
 
     /**
-     * Logout user
+     * User login with security checks
      */
-    logout() {
-        this.currentUser = null;
-        this.storage.set('currentUser', null);
-        console.log('🔐 User logged out');
-        
-        // Redirect to login page (will be handled by app.js)
-        return {
-            success: true,
-            message: 'Logged out successfully'
-        };
+    async login(email, password) {
+        try {
+            // Validation pipeline
+            await this.validateLoginCredentials(email, password);
+            
+            const user = await this.findUserByEmail(email);
+            await this.validateUserAccount(user);
+            await this.verifyUserPassword(password, user.password);
+
+            // Update session
+            await this.updateUserSession(user);
+            
+            console.log('🔐 User login successful:', user.email);
+            
+            return {
+                success: true,
+                user: this.sanitizeUserData(user),
+                message: '👋 Welcome back to FinSim!',
+                redirect: '/dashboard/dashboard.html'
+            };
+
+        } catch (error) {
+            console.error('❌ Login failed:', error);
+            return {
+                success: false,
+                message: error.message,
+                error: error.name
+            };
+        }
     }
 
     /**
-     * Check if user is authenticated
+     * Secure logout with session cleanup
+     */
+    async logout() {
+        try {
+            if (this.currentUser) {
+                console.log('🔐 User logout:', this.currentUser.email);
+            }
+            
+            this.currentUser = null;
+            await this.storage.set('currentUser', null);
+            
+            return {
+                success: true,
+                message: '👋 Logged out successfully',
+                redirect: '/index.html'
+            };
+
+        } catch (error) {
+            console.error('❌ Logout failed:', error);
+            throw new Error('Logout process failed');
+        }
+    }
+
+    /**
+     * Validation Methods
+     */
+    async validateRegistrationData(userData) {
+        const requiredFields = ['email', 'password', 'confirmPassword', 'firstName', 'lastName'];
+        const missingFields = requiredFields.filter(field => !userData[field]?.trim());
+        
+        if (missingFields.length > 0) {
+            throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+        }
+
+        if (!this.isValidEmail(userData.email)) {
+            throw new Error('Please enter a valid email address');
+        }
+    }
+
+    async checkUserExists(email) {
+        const existingUser = await this.dataManager.getUserByEmail(email);
+        if (existingUser) {
+            throw new Error('An account with this email already exists');
+        }
+    }
+
+    async validatePasswordStrength(password) {
+        if (!password || password.length < 6) {
+            throw new Error('Password must be at least 6 characters long');
+        }
+
+        // Add more sophisticated password validation if needed
+        const strengthChecks = {
+            hasUpperCase: /[A-Z]/.test(password),
+            hasLowerCase: /[a-z]/.test(password),
+            hasNumbers: /\d/.test(password),
+        };
+
+        const passedChecks = Object.values(strengthChecks).filter(Boolean).length;
+        if (passedChecks < 2) {
+            throw new Error('Password should include uppercase, lowercase letters and numbers');
+        }
+    }
+
+    async confirmPasswordMatch(password, confirmPassword) {
+        if (password !== confirmPassword) {
+            throw new Error('Passwords do not match');
+        }
+    }
+
+    async validateLoginCredentials(email, password) {
+        if (!email?.trim() || !password?.trim()) {
+            throw new Error('Please enter both email and password');
+        }
+    }
+
+    async findUserByEmail(email) {
+        const user = await this.dataManager.getUserByEmail(email);
+        if (!user) {
+            throw new Error('Invalid email or password');
+        }
+        return user;
+    }
+
+    async validateUserAccount(user) {
+        if (!user.isActive) {
+            throw new Error('Account is deactivated. Please contact support.');
+        }
+    }
+
+    async verifyUserPassword(inputPassword, storedHash) {
+        const isValid = await this.hashPassword(inputPassword) === storedHash;
+        if (!isValid) {
+            throw new Error('Invalid email or password');
+        }
+    }
+
+    /**
+     * User Management Methods
+     */
+    async createUserAccount(userData) {
+        return await this.dataManager.createUser({
+            email: userData.email.trim().toLowerCase(),
+            password: await this.hashPassword(userData.password),
+            firstName: userData.firstName.trim(),
+            lastName: userData.lastName.trim(),
+            role: 'user'
+        });
+    }
+
+    async setupUserEnvironment(userId) {
+        try {
+            // Create default accounts
+            const accounts = await Promise.all([
+                this.createAccount(userId, 'checking', 1000.00),
+                this.createAccount(userId, 'savings', 500.00)
+            ]);
+
+            console.log('💰 User environment setup completed:', accounts.length, 'accounts created');
+            
+        } catch (error) {
+            console.error('❌ User environment setup failed:', error);
+            // Don't throw error - user can still login and create accounts manually
+        }
+    }
+
+    async createAccount(userId, type, balance) {
+        return await this.dataManager.createAccount({
+            userId: userId,
+            type: type,
+            balance: balance,
+            accountNumber: this.generateAccountNumber()
+        });
+    }
+
+    async updateUserSession(user) {
+        this.currentUser = user;
+        await this.storage.set('currentUser', user.toJSON());
+        await this.updateUserLoginTime();
+    }
+
+    async updateUserLoginTime() {
+        if (this.currentUser) {
+            await this.dataManager.updateUser(this.currentUser.id, {
+                lastLogin: new Date().toISOString()
+            });
+        }
+    }
+
+    /**
+     * Security Methods
+     */
+    async hashPassword(password) {
+        // Simulate async hashing operation
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                // Basic hash for demo - REPLACE with proper bcrypt in production
+                const hash = btoa(password + 'finsim_salt_v2');
+                resolve(hash);
+            }, 10);
+        });
+    }
+
+    /**
+     * Utility Methods
+     */
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    generateAccountNumber() {
+        return 'FIN' + Date.now().toString().substr(-8) + Math.random().toString(36).substr(2, 3).toUpperCase();
+    }
+
+    sanitizeUserData(user) {
+        // Remove sensitive data before sending to client
+        const { password, ...sanitizedUser } = user;
+        return sanitizedUser;
+    }
+
+    /**
+     * Public Interface
      */
     isAuthenticated() {
         return this.currentUser !== null;
     }
 
-    /**
-     * Check if user is admin
-     */
     isAdmin() {
         return this.isAuthenticated() && this.currentUser.role === 'admin';
     }
 
-    /**
-     * Get current user info
-     */
     getCurrentUser() {
-        return this.currentUser;
+        return this.currentUser ? this.sanitizeUserData(this.currentUser) : null;
     }
 
     /**
-     * Validate registration data
-     */
-    validateRegistration(userData) {
-        return userData.email && 
-               userData.password && 
-               userData.firstName && 
-               userData.lastName;
-    }
-
-    /**
-     * Validate password strength
-     */
-    validatePassword(password) {
-        return password && password.length >= 6;
-    }
-
-    /**
-     * Basic password hashing (for demo purposes)
-     * In production, use proper hashing like bcrypt
-     */
-    hashPassword(password) {
-        // Simple hash for demo - replace with proper hashing in production
-        return btoa(password + 'finsim_salt');
-    }
-
-    /**
-     * Verify password against hash
-     */
-    verifyPassword(password, hash) {
-        return this.hashPassword(password) === hash;
-    }
-
-    /**
-     * Create default accounts for new users
-     */
-    createDefaultAccounts(userId) {
-        // Create checking account
-        this.dataManager.createAccount({
-            userId: userId,
-            type: 'checking',
-            balance: 1000.00, // Starter balance
-            accountNumber: this.generateAccountNumber()
-        });
-
-        // Create savings account
-        this.dataManager.createAccount({
-            userId: userId,
-            type: 'savings',
-            balance: 500.00, // Starter balance
-            accountNumber: this.generateAccountNumber()
-        });
-
-        console.log('💰 Default accounts created for user:', userId);
-    }
-
-    /**
-     * Generate account number
-     */
-    generateAccountNumber() {
-        return 'FIN' + Date.now().toString().substr(-8);
-    }
-
-    /**
-     * Update user's last login time
-     */
-    updateUserLoginTime() {
-        if (this.currentUser) {
-            this.dataManager.updateUser(this.currentUser.id, {
-                lastLogin: new Date().toISOString()
-            });
-        }
-    }
-
-    /**
-     * Change user password
+     * Password change with security validation
      */
     async changePassword(currentPassword, newPassword) {
         try {
             if (!this.isAuthenticated()) {
-                throw new Error('User not authenticated');
+                throw new Error('Authentication required');
             }
 
-            // Verify current password
-            if (!this.verifyPassword(currentPassword, this.currentUser.password)) {
-                throw new Error('Current password is incorrect');
-            }
+            await this.verifyUserPassword(currentPassword, this.currentUser.password);
+            await this.validatePasswordStrength(newPassword);
 
-            // Validate new password
-            if (!this.validatePassword(newPassword)) {
-                throw new Error('New password must be at least 6 characters long');
-            }
-
-            // Update password
-            this.dataManager.updateUser(this.currentUser.id, {
-                password: this.hashPassword(newPassword)
+            await this.dataManager.updateUser(this.currentUser.id, {
+                password: await this.hashPassword(newPassword)
             });
 
             return {
                 success: true,
-                message: 'Password changed successfully'
+                message: '🔒 Password updated successfully'
             };
 
         } catch (error) {
+            console.error('❌ Password change failed:', error);
             return {
                 success: false,
                 message: error.message
@@ -279,10 +331,10 @@ class AuthManager {
     }
 }
 
-// Create global auth manager instance
+// Create and export auth manager instance
 const authManager = new AuthManager();
 
-// Export for use in other files
+// Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = authManager;
 }
