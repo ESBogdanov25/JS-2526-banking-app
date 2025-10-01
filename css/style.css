@@ -1396,20 +1396,48 @@ p {
     margin-bottom: var(--space-6);
 }
 
+/* Professional Social Links */
 .social-links {
     display: flex;
     gap: var(--space-4);
 }
 
-.social-links a {
-    color: var(--gray-400);
+.social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--gray-700);
+    border-radius: 50%;
+    color: var(--gray-300);
     text-decoration: none;
-    font-size: 1.25rem;
-    transition: var(--transition);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--gray-600);
 }
 
-.social-links a:hover {
+.social-link:hover {
+    background: var(--primary-color);
     color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    border-color: var(--primary-color);
+}
+
+.social-link svg {
+    transition: transform 0.3s ease;
+}
+
+.social-link:hover svg {
+    transform: scale(1.1);
+}
+
+.social-link:nth-child(1):hover {
+    background: #0077b5;
+}
+
+.social-link:nth-child(2):hover {
+    background: #333;
 }
 
 .footer-links {
