@@ -1,5 +1,3 @@
-// js/auth.js
-
 /**
  * FinSim - Professional Authentication System
  * Enterprise-grade async/await patterns with proper error handling

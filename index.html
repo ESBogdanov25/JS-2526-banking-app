@@ -15,15 +15,28 @@
     </style>
 </head>
 <body>
+    <!-- UI Feedback Elements -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-message">Loading...</div>
+    </div>
+
+    <div id="notificationContainer" class="notification-container"></div>
+
     <!-- Header -->
     <header class="header">
         <nav class="navbar">
             <div class="nav-brand">
-                <a href="index.html"><h1>FinSim</h1></a>
+                <a href="index.html" data-nav="/index.html"><h1>FinSim</h1></a>
             </div>
             <div class="nav-links">
-                <a href="auth/login.html" class="nav-link">Login</a>
-                <a href="auth/register.html" class="nav-link btn-primary">Sign Up</a>
+                <!-- Show when NOT authenticated -->
+                <a href="auth/login.html" class="nav-link" data-nav="/auth/login.html" data-auth-ui="unauthenticated">Login</a>
+                <a href="auth/register.html" class="nav-link btn-primary" data-nav="/auth/register.html" data-auth-ui="unauthenticated">Sign Up</a>
+                
+                <!-- Show when authenticated -->
+                <a href="dashboard/dashboard.html" class="nav-link" data-nav="/dashboard/dashboard.html" data-auth-ui="authenticated" style="display: none;">Dashboard</a>
+                <a href="#" class="nav-link btn-primary" data-logout="true" data-auth-ui="authenticated" style="display: none;">Logout</a>
             </div>
         </nav>
     </header>
@@ -36,11 +49,11 @@
                 <h1 class="hero-title">Experience Modern Banking</h1>
                 <p class="hero-subtitle">A complete banking simulator to manage accounts, transfer funds, and analyze your financial health with enterprise-grade security.</p>
                 <div class="hero-actions">
-                    <a href="auth/register.html" class="btn btn-large btn-primary">
+                    <a href="auth/register.html" class="btn btn-large btn-primary" data-nav="/auth/register.html">
                         <span>Get Started Free</span>
                         <small>No credit card required</small>
                     </a>
-                    <a href="auth/login.html" class="btn btn-large btn-secondary">Sign In</a>
+                    <a href="auth/login.html" class="btn btn-large btn-secondary" data-nav="/auth/login.html">Sign In</a>
                 </div>
                 <div class="hero-stats">
                     <div class="stat">
@@ -430,7 +443,7 @@
             <div class="container">
                 <h2>Ready to Transform Your Financial Learning?</h2>
                 <p>Join 50,000+ users who trust FinSim for their banking education and financial simulation needs</p>
-                <a href="auth/register.html" class="btn btn-large btn-primary">Create Free Account</a>
+                <a href="auth/register.html" class="btn btn-large btn-primary" data-nav="/auth/register.html">Create Free Account</a>
                 <div class="cta-features">
                     <span>✓ No credit card required</span>
                     <span>✓ Free forever</span>
