@@ -1,2 +1,4 @@
-# JS-2526-banking-app
-A full-featured banking simulator built with vanilla JavaScript. Users can register, log in, and manage accounts with deposits, withdrawals, transfers, and analytics. Includes admin panel, role-based access, fraud detection, and persistent data via localStorage.
+## 🚧 Project Status
+
+This project is currently a **work in progress** and is not yet ready for production use.  
+Features, structure, and documentation may change as development continues.
