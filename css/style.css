@@ -366,20 +366,20 @@ p {
 }
 
 .card-1 {
-    top: 10%;
-    left: 10%;
+    margin-top: -100px;
+    margin-left: 580px;
     animation-delay: 0s;
 }
 
 .card-2 {
-    top: 60%;
-    right: 10%;
+    margin-top: 60px;
+    right: 6%;
     animation-delay: 2s;
 }
 
 .card-3 {
-    bottom: 20%;
-    left: 20%;
+    bottom: 120%;
+    left: 60%;
     animation-delay: 4s;
 }
 
