@@ -23,108 +23,110 @@
         </nav>
     </header>
 
-    <div class="dashboard-container">
-        <aside class="sidebar">
-            <div class="user-profile">
-                <div class="user-avatar">JD</div>
-                <div class="user-info">
-                    <h4>John Doe</h4>
-                    <p>Premium Banking</p>
+    <div data-auth-ui="authenticated">
+        <div class="dashboard-container">
+            <aside class="sidebar">
+                <div class="user-profile">
+                    <div class="user-avatar">JD</div>
+                    <div class="user-info">
+                        <h4>John Doe</h4>
+                        <p>Premium Banking</p>
+                    </div>
                 </div>
-            </div>
-            
-            <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item" data-nav="/dashboard/dashboard.html">
-                    <span>📊</span> Dashboard
-                </a>
-                <a href="accounts.html" class="nav-item active" data-nav="/dashboard/accounts.html">
-                    <span>💳</span> Accounts
-                </a>
-                <a href="transfer.html" class="nav-item" data-nav="/dashboard/transfer.html">
-                    <span>🔄</span> Transfer Money
-                </a>
-                <a href="transactions.html" class="nav-item" data-nav="/dashboard/transactions.html">
-                    <span>📝</span> Transactions
-                </a>
-                <a href="../auth/login.html" class="nav-item" data-logout="true" data-auth-ui="authenticated">
-                    <span>🚪</span> Logout
-                </a>
-            </nav>
-        </aside>
+                
+                <nav class="sidebar-nav">
+                    <a href="dashboard.html" class="nav-item" data-nav="/dashboard/dashboard.html">
+                        <span>📊</span> Dashboard
+                    </a>
+                    <a href="accounts.html" class="nav-item active" data-nav="/dashboard/accounts.html">
+                        <span>💳</span> Accounts
+                    </a>
+                    <a href="transfer.html" class="nav-item" data-nav="/dashboard/transfer.html">
+                        <span>🔄</span> Transfer Money
+                    </a>
+                    <a href="transactions.html" class="nav-item" data-nav="/dashboard/transactions.html">
+                        <span>📝</span> Transactions
+                    </a>
+                    <a href="../auth/login.html" class="nav-item" data-logout="true" data-auth-ui="authenticated">
+                        <span>🚪</span> Logout
+                    </a>
+                </nav>
+            </aside>
 
-        <main class="dashboard-main">
-            <div class="dashboard-header">
-                <h1>My Accounts</h1>
-                <p>Manage your bank accounts and view balances</p>
-            </div>
-
-            <div class="accounts-grid">
-                <div class="account-card primary">
-                    <div class="account-header">
-                        <h3>Checking Account</h3>
-                        <span class="account-type">Primary</span>
-                    </div>
-                    <div class="account-balance">
-                        <p class="balance-amount">$8,245.50</p>
-                        <p class="account-number">**** 4567</p>
-                    </div>
-                    <div class="account-actions">
-                        <button class="btn btn-small">View Details</button>
-                        <button class="btn btn-small btn-secondary">Transfer</button>
-                    </div>
+            <main class="dashboard-main">
+                <div class="dashboard-header">
+                    <h1>My Accounts</h1>
+                    <p>Manage your bank accounts and view balances</p>
                 </div>
 
-                <div class="account-card">
-                    <div class="account-header">
-                        <h3>Savings Account</h3>
-                        <span class="account-type">Savings</span>
+                <div class="accounts-grid">
+                    <div class="account-card primary">
+                        <div class="account-header">
+                            <h3>Checking Account</h3>
+                            <span class="account-type">Primary</span>
+                        </div>
+                        <div class="account-balance">
+                            <p class="balance-amount">$8,245.50</p>
+                            <p class="account-number">**** 4567</p>
+                        </div>
+                        <div class="account-actions">
+                            <button class="btn btn-small">View Details</button>
+                            <button class="btn btn-small btn-secondary">Transfer</button>
+                        </div>
                     </div>
-                    <div class="account-balance">
-                        <p class="balance-amount">$4,213.25</p>
-                        <p class="account-number">**** 8910</p>
+
+                    <div class="account-card">
+                        <div class="account-header">
+                            <h3>Savings Account</h3>
+                            <span class="account-type">Savings</span>
+                        </div>
+                        <div class="account-balance">
+                            <p class="balance-amount">$4,213.25</p>
+                            <p class="account-number">**** 8910</p>
+                        </div>
+                        <div class="account-actions">
+                            <button class="btn btn-small">View Details</button>
+                            <button class="btn btn-small btn-secondary">Transfer</button>
+                        </div>
                     </div>
-                    <div class="account-actions">
-                        <button class="btn btn-small">View Details</button>
-                        <button class="btn btn-small btn-secondary">Transfer</button>
+
+                    <div class="account-card">
+                        <div class="account-header">
+                            <h3>Investment Account</h3>
+                            <span class="account-type">Investment</span>
+                        </div>
+                        <div class="account-balance">
+                            <p class="balance-amount">$15,750.00</p>
+                            <p class="account-number">**** 1122</p>
+                        </div>
+                        <div class="account-actions">
+                            <button class="btn btn-small">View Details</button>
+                            <button class="btn btn-small btn-secondary">Transfer</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="account-card">
-                    <div class="account-header">
-                        <h3>Investment Account</h3>
-                        <span class="account-type">Investment</span>
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3>Account Statistics</h3>
                     </div>
-                    <div class="account-balance">
-                        <p class="balance-amount">$15,750.00</p>
-                        <p class="account-number">**** 1122</p>
-                    </div>
-                    <div class="account-actions">
-                        <button class="btn btn-small">View Details</button>
-                        <button class="btn btn-small btn-secondary">Transfer</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="content-card">
-                <div class="card-header">
-                    <h3>Account Statistics</h3>
-                </div>
-                <div class="stats-overview">
-                    <div class="stat-item">
-                        <span class="stat-label">Total Accounts</span>
-                        <span class="stat-value">3</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Total Balance</span>
-                        <span class="stat-value">$28,208.75</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Monthly Growth</span>
-                        <span class="stat-value positive">+2.4%</span>
+                    <div class="stats-overview">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Accounts</span>
+                            <span class="stat-value">3</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Balance</span>
+                            <span class="stat-value">$28,208.75</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Monthly Growth</span>
+                            <span class="stat-value positive">+2.4%</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
     <script src="../js/storage.js"></script>
