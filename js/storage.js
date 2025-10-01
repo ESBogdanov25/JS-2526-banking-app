@@ -8,7 +8,7 @@ class StorageManager {
         this.prefix = 'finsim_'; // Prevent conflicts with other apps
         this.init();
     }
-
+    
     /**
      * Initialize storage - create empty datasets if they don't exist
      */
