@@ -1,6 +1,6 @@
 /**
  * FinSim - Dashboard Management System
- * Handles real-time user data and UI updates
+ * Handles real-time user data, transfers, and IBAN validation
  */
 
 class DashboardManager {
@@ -28,6 +28,7 @@ class DashboardManager {
             await this.loadRecentTransactions();
             await this.updateUI();
             this.setupEventListeners();
+            this.setupTransferForm();
 
             this.isInitialized = true;
             console.log('✅ Dashboard Manager initialized successfully');
@@ -102,7 +103,9 @@ class DashboardManager {
             await this.updateDashboardStats();
             await this.updateRecentTransactions();
             await this.updateSidebar();
-            await this.updateDashboardHeader(); // ADDED: Fix welcome message
+            await this.updateDashboardHeader();
+            await this.updateTransferForm(); // NEW: Update transfer form with real data
+            
         } catch (error) {
             console.error('❌ UI update failed:', error);
         }
@@ -156,6 +159,325 @@ class DashboardManager {
     }
 
     /**
+     * NEW: Update transfer form with real account data
+     */
+    async updateTransferForm() {
+        await this.populateAccountDropdowns();
+        await this.updateMyAccountsIBANs();
+        await this.updateRecentTransfersList();
+    }
+
+    /**
+     * NEW: Populate account dropdowns in transfer form
+     */
+    async populateAccountDropdowns() {
+        const fromAccountSelect = document.getElementById('fromAccount');
+        const toAccountSelect = document.getElementById('toAccount');
+        
+        if (!fromAccountSelect || !toAccountSelect) return;
+
+        // Clear existing options (keep first option)
+        while (fromAccountSelect.children.length > 1) {
+            fromAccountSelect.removeChild(fromAccountSelect.lastChild);
+        }
+        while (toAccountSelect.children.length > 1) {
+            toAccountSelect.removeChild(toAccountSelect.lastChild);
+        }
+
+        // Add user's accounts to dropdowns
+        this.userAccounts.forEach(account => {
+            const optionFrom = document.createElement('option');
+            optionFrom.value = account.id;
+            optionFrom.textContent = `${this.getAccountTypeDisplay(account.type)} (${account.maskedAccountNumber}) - ${account.formatBalance()}`;
+            fromAccountSelect.appendChild(optionFrom);
+
+            const optionTo = document.createElement('option');
+            optionTo.value = account.id;
+            optionTo.textContent = `My ${this.getAccountTypeDisplay(account.type)} (${account.maskedAccountNumber})`;
+            toAccountSelect.appendChild(optionTo);
+        });
+    }
+
+    /**
+     * NEW: Get display name for account type
+     */
+    getAccountTypeDisplay(type) {
+        const types = {
+            'checking': 'Checking Account',
+            'savings': 'Savings Account',
+            'investment': 'Investment Account'
+        };
+        return types[type] || type;
+    }
+
+    /**
+     * NEW: Update "My Accounts & IBANs" section
+     */
+    async updateMyAccountsIBANs() {
+        const accountIbanList = document.getElementById('accountIbanList');
+        if (!accountIbanList) return;
+
+        accountIbanList.innerHTML = '';
+
+        this.userAccounts.forEach(account => {
+            const accountItem = document.createElement('div');
+            accountItem.className = 'account-iban-item';
+            accountItem.innerHTML = `
+                <div class="account-iban-info">
+                    <strong>${this.getAccountTypeDisplay(account.type)}</strong>
+                    <span class="iban-number">${account.iban}</span>
+                </div>
+                <div class="account-balance-small">${account.formatBalance()}</div>
+            `;
+            accountIbanList.appendChild(accountItem);
+        });
+    }
+
+    /**
+     * NEW: Update recent transfers list with real data
+     */
+    async updateRecentTransfersList() {
+        const recentTransfersList = document.getElementById('recentTransfersList');
+        if (!recentTransfersList) return;
+
+        // Get recent transfer transactions
+        const transferTransactions = this.recentTransactions.filter(
+            txn => txn.type === 'transfer' || txn.type === 'deposit'
+        ).slice(0, 3);
+
+        recentTransfersList.innerHTML = '';
+
+        if (transferTransactions.length === 0) {
+            recentTransfersList.innerHTML = '<div class="empty-state">No recent transfers</div>';
+            return;
+        }
+
+        transferTransactions.forEach(transaction => {
+            const transferItem = document.createElement('div');
+            transferItem.className = 'transfer-item';
+            
+            const isOutgoing = transaction.type === 'transfer';
+            const description = isOutgoing 
+                ? `To ${transaction.recipientName || 'Unknown'}`
+                : `From ${transaction.recipientName || 'Unknown'}`;
+
+            transferItem.innerHTML = `
+                <div class="transfer-details">
+                    <p>${description}</p>
+                    <small>${transaction.displayDate}</small>
+                </div>
+                <div class="transfer-amount ${isOutgoing ? 'negative' : 'positive'}">
+                    ${isOutgoing ? '-' : '+'}${new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD'
+                    }).format(transaction.amount)}
+                </div>
+            `;
+            recentTransfersList.appendChild(transferItem);
+        });
+    }
+
+    /**
+     * NEW: Setup transfer form event listeners
+     */
+    setupTransferForm() {
+        const toAccountSelect = document.getElementById('toAccount');
+        const externalAccountGroup = document.getElementById('externalAccountGroup');
+        const ibanInput = document.getElementById('ibanAccount');
+        const fromAccountSelect = document.getElementById('fromAccount');
+        const amountInput = document.getElementById('amount');
+
+        // Show/hide external account fields
+        if (toAccountSelect && externalAccountGroup) {
+            toAccountSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'external') {
+                    externalAccountGroup.style.display = 'block';
+                } else {
+                    externalAccountGroup.style.display = 'none';
+                }
+            });
+        }
+
+        // IBAN validation
+        if (ibanInput) {
+            ibanInput.addEventListener('input', this.debounce(() => {
+                this.validateIBAN(ibanInput.value);
+            }, 500));
+        }
+
+        // Balance info display
+        if (fromAccountSelect && amountInput) {
+            fromAccountSelect.addEventListener('change', () => {
+                this.updateBalanceInfo();
+            });
+            
+            amountInput.addEventListener('input', () => {
+                this.updateBalanceInfo();
+            });
+        }
+    }
+
+    /**
+     * NEW: Validate IBAN and show recipient info
+     */
+    async validateIBAN(iban) {
+        const validationElement = document.getElementById('ibanValidation');
+        const validationMessage = document.getElementById('validationMessage');
+        
+        if (!validationElement || !validationMessage) return;
+
+        if (!iban || iban.trim() === '') {
+            validationElement.style.display = 'none';
+            return;
+        }
+
+        // Basic format validation
+        if (!Account.isValidIBAN(iban)) {
+            validationElement.style.display = 'block';
+            validationElement.querySelector('.validation-icon').textContent = '❌';
+            validationMessage.textContent = 'Invalid IBAN format';
+            return;
+        }
+
+        // Check if IBAN exists in system
+        validationElement.style.display = 'block';
+        validationElement.querySelector('.validation-icon').textContent = '⏳';
+        validationMessage.textContent = 'Checking IBAN...';
+
+        try {
+            const recipientAccount = dataManager.getAccountByIBAN(iban);
+            
+            if (recipientAccount) {
+                const recipientUser = dataManager.getUserById(recipientAccount.userId);
+                validationElement.querySelector('.validation-icon').textContent = '✅';
+                validationMessage.textContent = `Account found: ${recipientUser?.fullName || 'Unknown User'}`;
+            } else {
+                validationElement.querySelector('.validation-icon').textContent = '❌';
+                validationMessage.textContent = 'Account not found';
+            }
+        } catch (error) {
+            validationElement.querySelector('.validation-icon').textContent = '❌';
+            validationMessage.textContent = 'Error validating IBAN';
+        }
+    }
+
+    /**
+     * NEW: Update balance information based on selected account
+     */
+    async updateBalanceInfo() {
+        const fromAccountSelect = document.getElementById('fromAccount');
+        const amountInput = document.getElementById('amount');
+        const balanceInfo = document.getElementById('balanceInfo');
+        const availableBalance = document.getElementById('availableBalance');
+        
+        if (!fromAccountSelect || !amountInput || !balanceInfo || !availableBalance) return;
+
+        const selectedAccountId = fromAccountSelect.value;
+        const amount = parseFloat(amountInput.value) || 0;
+
+        if (!selectedAccountId) {
+            balanceInfo.style.display = 'none';
+            return;
+        }
+
+        const account = dataManager.getAccountById(selectedAccountId);
+        if (account) {
+            balanceInfo.style.display = 'block';
+            availableBalance.textContent = account.formatBalance();
+            
+            // Highlight if insufficient funds
+            if (amount > account.balance) {
+                balanceInfo.style.color = 'var(--error-color)';
+            } else {
+                balanceInfo.style.color = 'var(--success-color)';
+            }
+        }
+    }
+
+    /**
+     * NEW: Process transfer form submission
+     */
+    async processTransfer(formData) {
+        try {
+            const fromAccountId = formData.get('fromAccount');
+            const toAccountValue = formData.get('toAccount');
+            const amount = parseFloat(formData.get('amount'));
+            const description = formData.get('description') || '';
+            const recipientEmail = formData.get('externalAccount');
+            const recipientIBAN = formData.get('ibanAccount');
+
+            // Validate inputs
+            if (!fromAccountId || !toAccountValue || !amount || amount <= 0) {
+                throw new Error('Please fill all required fields correctly');
+            }
+
+            let transferResult;
+
+            if (toAccountValue === 'external') {
+                // External transfer via IBAN
+                if (!recipientIBAN) {
+                    throw new Error('Please enter recipient IBAN');
+                }
+
+                if (!Account.isValidIBAN(recipientIBAN)) {
+                    throw new Error('Invalid IBAN format');
+                }
+
+                transferResult = await dataManager.processTransfer(
+                    fromAccountId,
+                    recipientIBAN,
+                    amount,
+                    description
+                );
+
+            } else {
+                // Internal transfer between own accounts
+                transferResult = await dataManager.processTransfer(
+                    fromAccountId,
+                    toAccountValue,
+                    amount,
+                    description
+                );
+            }
+
+            if (transferResult.success) {
+                await this.showSuccess('Transfer completed successfully!');
+                
+                // Refresh data to show updated balances
+                await this.refreshData();
+                
+                // Reset form
+                document.getElementById('transferForm').reset();
+                document.getElementById('externalAccountGroup').style.display = 'none';
+                document.getElementById('ibanValidation').style.display = 'none';
+                document.getElementById('balanceInfo').style.display = 'none';
+                
+            } else {
+                throw new Error(transferResult.error);
+            }
+
+        } catch (error) {
+            console.error('❌ Transfer failed:', error);
+            await this.showError(error.message);
+        }
+    }
+
+    /**
+     * Utility method for debouncing
+     */
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    /**
      * Update account cards with real account data
      */
     async updateAccountCards() {
@@ -176,7 +498,6 @@ class DashboardManager {
                 }
 
                 if (accountTypeElement) {
-                    // Capitalize first letter of account type
                     accountTypeElement.textContent = account.type.charAt(0).toUpperCase() + account.type.slice(1);
                 }
             }
@@ -199,14 +520,12 @@ class DashboardManager {
             }).format(totalBalance);
         }
 
-        // You can implement more sophisticated calculations for income/expenses
-        // For now, using placeholder calculations
         if (monthlyIncomeElement) {
-            monthlyIncomeElement.textContent = '$4,250.00'; // Will be calculated from transactions
+            monthlyIncomeElement.textContent = '$4,250.00';
         }
 
         if (monthlyExpensesElement) {
-            monthlyExpensesElement.textContent = '$2,875.50'; // Will be calculated from transactions
+            monthlyExpensesElement.textContent = '$2,875.50';
         }
     }
 
@@ -218,7 +537,6 @@ class DashboardManager {
         
         if (!transactionList) return;
 
-        // Clear existing placeholder transactions
         transactionList.innerHTML = '';
 
         this.recentTransactions.forEach(transaction => {
@@ -226,7 +544,6 @@ class DashboardManager {
             transactionList.appendChild(transactionItem);
         });
 
-        // If no transactions, show empty state
         if (this.recentTransactions.length === 0) {
             transactionList.innerHTML = '<div class="empty-state">No recent transactions</div>';
         }
@@ -285,7 +602,6 @@ class DashboardManager {
      */
     async updateSidebar() {
         // Sidebar is already updated by updateUserProfile()
-        // Add any sidebar-specific updates here if needed
     }
 
     /**
@@ -304,10 +620,6 @@ class DashboardManager {
      * Setup event listeners for real-time updates
      */
     setupEventListeners() {
-        // Listen for account updates
-        // Listen for transaction updates
-        // You can expand this for real-time features
-        
         console.log('🎯 Dashboard event listeners setup');
     }
 
@@ -325,6 +637,21 @@ class DashboardManager {
             
         } catch (error) {
             console.error('❌ Dashboard refresh failed:', error);
+        }
+    }
+
+    /**
+     * UI Feedback Methods
+     */
+    async showSuccess(message) {
+        if (window.finSimApp) {
+            await finSimApp.showSuccess(message);
+        }
+    }
+
+    async showError(message) {
+        if (window.finSimApp) {
+            await finSimApp.showError(message);
         }
     }
 
