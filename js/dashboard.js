@@ -147,29 +147,44 @@ class TransactionsManager {
     }
 
     /**
-     * Setup filter dropdowns with real account data
+     * Setup filter dropdowns with real account data and transaction types
      */
     async setupFilters() {
-        const accountFilter = document.querySelector('.filter-select'); // First filter select
-        if (!accountFilter) return;
-
-        console.log('🔧 Setting up account filter...');
-
-        // Clear existing options
-        accountFilter.innerHTML = '<option value="all">All Accounts</option>';
-
-        // Get user's accounts
-        const userAccounts = dataManager.getAccountsByUserId(this.currentUser.id);
+        console.log('🔧 Setting up transaction filters...');
         
-        // Add account options to filter
-        userAccounts.forEach(account => {
-            const option = document.createElement('option');
-            option.value = account.id;
-            option.textContent = `${this.getAccountTypeDisplay(account.type)} (${account.maskedAccountNumber})`;
-            accountFilter.appendChild(option);
-        });
+        // Account filter (first dropdown)
+        const accountFilter = document.querySelectorAll('.filter-select')[0];
+        // Type filter (second dropdown) 
+        const typeFilter = document.querySelectorAll('.filter-select')[1];
+        
+        // Setup account filter
+        if (accountFilter) {
+            accountFilter.innerHTML = '<option value="all">All Accounts</option>';
 
-        console.log('✅ Account filter populated with', userAccounts.length, 'accounts');
+            // Get user's accounts
+            const userAccounts = dataManager.getAccountsByUserId(this.currentUser.id);
+            
+            // Add account options to filter
+            userAccounts.forEach(account => {
+                const option = document.createElement('option');
+                option.value = account.id;
+                option.textContent = `${this.getAccountTypeDisplay(account.type)} (${account.maskedAccountNumber})`;
+                accountFilter.appendChild(option);
+            });
+
+            console.log('✅ Account filter populated with', userAccounts.length, 'accounts');
+        }
+
+        // Setup type filter
+        if (typeFilter) {
+            typeFilter.innerHTML = `
+                <option value="all">All Transactions</option>
+                <option value="transfer">Transfers</option>
+                <option value="deposit">Deposits</option>
+                <option value="withdrawal">Withdrawals</option>
+            `;
+            console.log('✅ Type filter populated');
+        }
     }
 
     /**
@@ -178,11 +193,19 @@ class TransactionsManager {
     setupEventListeners() {
         console.log('🎯 Setting up transaction event listeners...');
         
-        // Account filter
-        const accountFilter = document.querySelector('.filter-select'); // First filter select
+        // Account filter (first dropdown)
+        const accountFilter = document.querySelectorAll('.filter-select')[0];
         if (accountFilter) {
             accountFilter.addEventListener('change', (e) => {
                 this.handleFilterChange('account', e.target.value);
+            });
+        }
+        
+        // Type filter (second dropdown)
+        const typeFilter = document.querySelectorAll('.filter-select')[1];
+        if (typeFilter) {
+            typeFilter.addEventListener('change', (e) => {
+                this.handleFilterChange('type', e.target.value);
             });
         }
         
@@ -197,6 +220,13 @@ class TransactionsManager {
             // Account filter
             if (this.currentFilters.account !== 'all') {
                 if (transaction.accountId !== this.currentFilters.account) {
+                    return false;
+                }
+            }
+            
+            // Type filter
+            if (this.currentFilters.type !== 'all') {
+                if (transaction.type !== this.currentFilters.type) {
                     return false;
                 }
             }
@@ -851,7 +881,7 @@ class DashboardManager {
                 clearTimeout(timeout);
                 func(...args);
             };
-            clearTimeout(timetimeout);
+            clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
     }
