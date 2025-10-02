@@ -318,10 +318,35 @@ class DataManager {
      * NEW: Get account by IBAN
      */
     getAccountByIBAN(iban) {
+        console.log('🔍 getAccountByIBAN called with:', iban);
+        
         const accounts = this.storage.get('accounts', []);
-        const accountData = accounts.find(account => 
-            account.iban && account.iban.replace(/\s/g, '') === iban.replace(/\s/g, '')
-        );
+        console.log('📊 Total accounts in storage:', accounts.length);
+        
+        // Log all accounts and their IBANs for debugging
+        accounts.forEach((account, index) => {
+            console.log(`Account ${index}:`, {
+                id: account.id,
+                iban: account.iban,
+                hasIBAN: !!account.iban
+            });
+        });
+        
+        const accountData = accounts.find(account => {
+            const accountIBAN = account.iban ? account.iban.replace(/\s/g, '') : '';
+            const searchIBAN = iban ? iban.replace(/\s/g, '') : '';
+            const match = accountIBAN === searchIBAN;
+            
+            console.log('🔍 IBAN Comparison:', {
+                accountIBAN: accountIBAN,
+                searchIBAN: searchIBAN,
+                match: match
+            });
+            
+            return match;
+        });
+        
+        console.log('✅ IBAN lookup result:', accountData ? 'FOUND' : 'NOT FOUND');
         return accountData ? new Account(accountData) : null;
     }
 

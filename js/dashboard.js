@@ -287,15 +287,26 @@ class DashboardManager {
      * Setup transfer form event listeners
      */
     setupTransferForm() {
+        console.log('🔧 Setting up transfer form...');
+        
         const toAccountSelect = document.getElementById('toAccount');
         const externalAccountGroup = document.getElementById('externalAccountGroup');
         const ibanInput = document.getElementById('ibanAccount');
         const fromAccountSelect = document.getElementById('fromAccount');
         const amountInput = document.getElementById('amount');
 
+        console.log('📝 Form elements found:', {
+            toAccountSelect: !!toAccountSelect,
+            externalAccountGroup: !!externalAccountGroup,
+            ibanInput: !!ibanInput,
+            fromAccountSelect: !!fromAccountSelect,
+            amountInput: !!amountInput
+        });
+
         // Show/hide external account fields
         if (toAccountSelect && externalAccountGroup) {
             toAccountSelect.addEventListener('change', (e) => {
+                console.log('🔄 To account changed:', e.target.value);
                 if (e.target.value === 'external') {
                     externalAccountGroup.style.display = 'block';
                 } else {
@@ -315,11 +326,13 @@ class DashboardManager {
         // Balance info and transfer summary updates
         if (fromAccountSelect && amountInput) {
             fromAccountSelect.addEventListener('change', () => {
+                console.log('🔄 From account changed');
                 this.updateBalanceInfo();
                 this.updateTransferSummary();
             });
             
             amountInput.addEventListener('input', () => {
+                console.log('💰 Amount input:', amountInput.value);
                 this.updateBalanceInfo();
                 this.updateTransferSummary();
             });
@@ -331,6 +344,8 @@ class DashboardManager {
                 this.updateTransferSummary();
             });
         }
+
+        console.log('✅ Transfer form setup complete');
     }
 
     /**
@@ -352,20 +367,37 @@ class DashboardManager {
      * Update transfer summary with dynamic calculations
      */
     updateTransferSummary() {
+        console.log('📊 updateTransferSummary called');
+        
         const amountInput = document.getElementById('amount');
         const toAccountSelect = document.getElementById('toAccount');
         const transferSummary = document.getElementById('transferSummary');
         const totalAmountElement = document.getElementById('totalAmount');
         const feeAmountElement = document.getElementById('feeAmount');
         
-        if (!amountInput || !toAccountSelect || !transferSummary || !totalAmountElement || !feeAmountElement) return;
+        console.log('🔍 Elements found:', {
+            amountInput: !!amountInput,
+            toAccountSelect: !!toAccountSelect,
+            transferSummary: !!transferSummary,
+            totalAmountElement: !!totalAmountElement,
+            feeAmountElement: !!feeAmountElement
+        });
+        
+        if (!amountInput || !toAccountSelect || !transferSummary || !totalAmountElement || !feeAmountElement) {
+            console.log('❌ Missing elements, returning early');
+            return;
+        }
         
         const amount = parseFloat(amountInput.value) || 0;
         const isExternal = toAccountSelect.value === 'external';
         
+        console.log('💰 Calculation data:', { amount, isExternal });
+        
         if (amount > 0) {
             const fee = this.calculateTransferFee(amount, isExternal);
             const total = amount + fee;
+            
+            console.log('🧮 Calculated:', { fee, total });
             
             transferSummary.style.display = 'block';
             
@@ -380,8 +412,11 @@ class DashboardManager {
                 style: 'currency',
                 currency: 'USD'
             }).format(total);
+            
+            console.log('✅ Summary updated');
         } else {
             transferSummary.style.display = 'none';
+            console.log('❌ Amount is 0, hiding summary');
         }
     }
 
