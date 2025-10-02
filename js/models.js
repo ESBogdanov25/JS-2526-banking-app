@@ -1,16 +1,16 @@
 /**
- * FinSim - Data Models
- * Defines the core data structures for the banking system
+ * FinSim - Data Models with IBAN Support
+ * Enhanced with professional banking features
  */
 
 class User {
     constructor(userData) {
         this.id = userData.id || this.generateId();
         this.email = userData.email;
-        this.password = userData.password; // Will be hashed later
+        this.password = userData.password;
         this.firstName = userData.firstName;
         this.lastName = userData.lastName;
-        this.role = userData.role || 'user'; // 'user' or 'admin'
+        this.role = userData.role || 'user';
         this.createdAt = userData.createdAt || new Date().toISOString();
         this.lastLogin = userData.lastLogin || null;
         this.isActive = userData.isActive !== undefined ? userData.isActive : true;
@@ -48,7 +48,8 @@ class Account {
         this.id = accountData.id || this.generateId();
         this.userId = accountData.userId;
         this.accountNumber = accountData.accountNumber || this.generateAccountNumber();
-        this.type = accountData.type || 'checking'; // 'checking', 'savings', 'investment'
+        this.iban = accountData.iban || this.generateIBAN(); // NEW: IBAN support
+        this.type = accountData.type || 'checking';
         this.balance = accountData.balance || 0;
         this.currency = accountData.currency || 'USD';
         this.createdAt = accountData.createdAt || new Date().toISOString();
@@ -61,8 +62,32 @@ class Account {
     }
 
     generateAccountNumber() {
-        // Generate a realistic-looking account number
         return 'FIN' + Date.now().toString().substr(-8) + Math.random().toString(36).substr(2, 3).toUpperCase();
+    }
+
+    /**
+     * Generate professional IBAN format
+     * Format: FS00 XXXX XXXX XXXX XXXX XXXX
+     */
+    generateIBAN() {
+        const countryCode = 'FS'; // FinSim country code
+        const checkDigits = '00'; // Simplified check digits for demo
+        const bankCode = 'FINS'; // Bank identifier
+        const branchCode = '0010'; // Branch code
+        const accountNumber = Math.random().toString().substr(2, 12).padStart(12, '0');
+        
+        return `${countryCode}${checkDigits} ${bankCode}${branchCode} ${accountNumber.match(/.{1,4}/g).join(' ')}`;
+    }
+
+    /**
+     * Validate IBAN format
+     */
+    static isValidIBAN(iban) {
+        if (!iban || typeof iban !== 'string') return false;
+        
+        // Basic IBAN format validation
+        const ibanRegex = /^FS[0-9]{2} FINS[0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4}$/;
+        return ibanRegex.test(iban.trim());
     }
 
     /**
@@ -83,10 +108,42 @@ class Account {
     }
 
     /**
+     * Get masked IBAN for display
+     */
+    get maskedIBAN() {
+        const parts = this.iban.split(' ');
+        if (parts.length >= 6) {
+            return `FS** **** **** **** **** ${parts[5]}`;
+        }
+        return this.iban;
+    }
+
+    /**
      * Check if account has sufficient funds
      */
     hasSufficientFunds(amount) {
         return this.balance >= amount;
+    }
+
+    /**
+     * Deposit money into account
+     */
+    deposit(amount) {
+        if (amount <= 0) throw new Error('Deposit amount must be positive');
+        this.balance += amount;
+        return this.balance;
+    }
+
+    /**
+     * Withdraw money from account
+     */
+    withdraw(amount) {
+        if (amount <= 0) throw new Error('Withdrawal amount must be positive');
+        if (!this.hasSufficientFunds(amount)) {
+            throw new Error('Insufficient funds');
+        }
+        this.balance -= amount;
+        return this.balance;
     }
 
     toJSON() {
@@ -94,6 +151,7 @@ class Account {
             id: this.id,
             userId: this.userId,
             accountNumber: this.accountNumber,
+            iban: this.iban, // NEW: Include IBAN in serialization
             type: this.type,
             balance: this.balance,
             currency: this.currency,
@@ -108,11 +166,13 @@ class Transaction {
     constructor(transactionData) {
         this.id = transactionData.id || this.generateId();
         this.accountId = transactionData.accountId;
+        this.recipientIBAN = transactionData.recipientIBAN || null; // NEW: Recipient IBAN
+        this.recipientName = transactionData.recipientName || null; // NEW: Recipient name
         this.type = transactionData.type; // 'deposit', 'withdrawal', 'transfer'
         this.amount = transactionData.amount;
         this.description = transactionData.description || '';
         this.category = transactionData.category || 'general';
-        this.status = transactionData.status || 'completed'; // 'pending', 'completed', 'failed'
+        this.status = transactionData.status || 'completed';
         this.timestamp = transactionData.timestamp || new Date().toISOString();
         this.recipientAccountId = transactionData.recipientAccountId || null;
         this.fraudAlerts = transactionData.fraudAlerts || [];
@@ -176,6 +236,8 @@ class Transaction {
         return {
             id: this.id,
             accountId: this.accountId,
+            recipientIBAN: this.recipientIBAN, // NEW: Include recipient IBAN
+            recipientName: this.recipientName, // NEW: Include recipient name
             type: this.type,
             amount: this.amount,
             description: this.description,
@@ -190,7 +252,7 @@ class Transaction {
 }
 
 /**
- * Data Manager - Handles operations on our data models
+ * Data Manager - Enhanced with IBAN and transfer operations
  */
 class DataManager {
     constructor() {
@@ -252,6 +314,17 @@ class DataManager {
         return accountData ? new Account(accountData) : null;
     }
 
+    /**
+     * NEW: Get account by IBAN
+     */
+    getAccountByIBAN(iban) {
+        const accounts = this.storage.get('accounts', []);
+        const accountData = accounts.find(account => 
+            account.iban && account.iban.replace(/\s/g, '') === iban.replace(/\s/g, '')
+        );
+        return accountData ? new Account(accountData) : null;
+    }
+
     updateAccountBalance(accountId, newBalance) {
         const accounts = this.storage.get('accounts', []);
         const accountIndex = accounts.findIndex(account => account.id === accountId);
@@ -291,6 +364,86 @@ class DataManager {
             .filter(txn => accountIds.includes(txn.accountId))
             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
             .map(txnData => new Transaction(txnData));
+    }
+
+    // NEW: Transfer Methods
+    /**
+     * Process money transfer between accounts
+     */
+    async processTransfer(fromAccountId, toIBAN, amount, description = '') {
+        try {
+            // Validate from account
+            const fromAccount = this.getAccountById(fromAccountId);
+            if (!fromAccount) {
+                throw new Error('Sender account not found');
+            }
+
+            // Validate sufficient funds
+            if (!fromAccount.hasSufficientFunds(amount)) {
+                throw new Error('Insufficient funds');
+            }
+
+            // Validate recipient IBAN and get account
+            const toAccount = this.getAccountByIBAN(toIBAN);
+            if (!toAccount) {
+                throw new Error('Recipient account not found');
+            }
+
+            if (!toAccount.isActive) {
+                throw new Error('Recipient account is inactive');
+            }
+
+            // Prevent transfer to same account
+            if (fromAccount.id === toAccount.id) {
+                throw new Error('Cannot transfer to the same account');
+            }
+
+            // Process transfer
+            fromAccount.withdraw(amount);
+            toAccount.deposit(amount);
+
+            // Update accounts in storage
+            this.updateAccountBalance(fromAccount.id, fromAccount.balance);
+            this.updateAccountBalance(toAccount.id, toAccount.balance);
+
+            // Create transaction records
+            const senderTransaction = this.createTransaction({
+                accountId: fromAccount.id,
+                recipientIBAN: toAccount.iban,
+                recipientName: this.getUserById(toAccount.userId)?.fullName || 'Unknown',
+                type: 'transfer',
+                amount: amount,
+                description: description || `Transfer to ${toAccount.maskedIBAN}`,
+                category: 'transfer',
+                status: 'completed'
+            });
+
+            const recipientTransaction = this.createTransaction({
+                accountId: toAccount.id,
+                recipientIBAN: fromAccount.iban,
+                recipientName: this.getUserById(fromAccount.userId)?.fullName || 'Unknown',
+                type: 'deposit',
+                amount: amount,
+                description: description || `Transfer from ${fromAccount.maskedIBAN}`,
+                category: 'transfer',
+                status: 'completed'
+            });
+
+            return {
+                success: true,
+                senderTransaction: senderTransaction,
+                recipientTransaction: recipientTransaction,
+                newSenderBalance: fromAccount.balance,
+                newRecipientBalance: toAccount.balance
+            };
+
+        } catch (error) {
+            console.error('❌ Transfer failed:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
     }
 
     // Utility Methods
