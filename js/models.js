@@ -314,21 +314,21 @@ class DataManager {
         return accountData ? new Account(accountData) : null;
     }
 
-    /**
-     * NEW: Get account by IBAN
-     */
     getAccountByIBAN(iban) {
         console.log('🔍 getAccountByIBAN called with:', iban);
+        console.log('IBAN type:', typeof iban);
+        console.log('IBAN length:', iban.length);
         
         const accounts = this.storage.get('accounts', []);
         console.log('📊 Total accounts in storage:', accounts.length);
         
-        // Log all accounts and their IBANs for debugging
+        // Log all accounts and their IBANs
         accounts.forEach((account, index) => {
             console.log(`Account ${index}:`, {
                 id: account.id,
                 iban: account.iban,
-                hasIBAN: !!account.iban
+                ibanType: typeof account.iban,
+                ibanLength: account.iban ? account.iban.length : 'NO IBAN'
             });
         });
         
@@ -337,16 +337,16 @@ class DataManager {
             const searchIBAN = iban ? iban.replace(/\s/g, '') : '';
             const match = accountIBAN === searchIBAN;
             
-            console.log('🔍 IBAN Comparison:', {
+            console.log('🔍 Comparing:', {
                 accountIBAN: accountIBAN,
-                searchIBAN: searchIBAN,
+                searchIBAN: searchIBAN, 
                 match: match
             });
             
             return match;
         });
         
-        console.log('✅ IBAN lookup result:', accountData ? 'FOUND' : 'NOT FOUND');
+        console.log('✅ Lookup result:', accountData ? 'FOUND' : 'NOT FOUND');
         return accountData ? new Account(accountData) : null;
     }
 
@@ -391,11 +391,7 @@ class DataManager {
             .map(txnData => new Transaction(txnData));
     }
 
-    // NEW: Transfer Methods
-    /**
-     * Process money transfer between accounts
-     */
-    async processTransfer(fromAccountId, toIBAN, amount, description = '') {
+    async processTransfer(fromAccountId, toAccountIdentifier, amount, description = '') {
         try {
             // Validate from account
             const fromAccount = this.getAccountById(fromAccountId);
@@ -408,8 +404,17 @@ class DataManager {
                 throw new Error('Insufficient funds');
             }
 
-            // Validate recipient IBAN and get account
-            const toAccount = this.getAccountByIBAN(toIBAN);
+            let toAccount;
+
+            // Check if toAccountIdentifier is an account ID (internal transfer) or IBAN (external transfer)
+            if (toAccountIdentifier.startsWith('acc_')) {
+                // It's an account ID - internal transfer between own accounts
+                toAccount = this.getAccountById(toAccountIdentifier);
+            } else {
+                // It's an IBAN - external transfer to another user
+                toAccount = this.getAccountByIBAN(toAccountIdentifier);
+            }
+
             if (!toAccount) {
                 throw new Error('Recipient account not found');
             }
