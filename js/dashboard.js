@@ -156,6 +156,9 @@ class TransactionsManager {
         const accountFilter = document.querySelectorAll('.filter-select')[0];
         // Type filter (second dropdown) 
         const typeFilter = document.querySelectorAll('.filter-select')[1];
+        // Date inputs
+        const dateFromInput = document.querySelectorAll('.filter-select')[2];
+        const dateToInput = document.querySelectorAll('.filter-select')[3];
         
         // Setup account filter
         if (accountFilter) {
@@ -185,6 +188,17 @@ class TransactionsManager {
             `;
             console.log('✅ Type filter populated');
         }
+
+        // Setup date inputs with placeholder text
+        if (dateFromInput) {
+            dateFromInput.placeholder = 'From Date';
+            console.log('✅ From Date input setup');
+        }
+        
+        if (dateToInput) {
+            dateToInput.placeholder = 'To Date';
+            console.log('✅ To Date input setup');
+        }
     }
 
     /**
@@ -206,6 +220,22 @@ class TransactionsManager {
         if (typeFilter) {
             typeFilter.addEventListener('change', (e) => {
                 this.handleFilterChange('type', e.target.value);
+            });
+        }
+        
+        // Date filters
+        const dateFromInput = document.querySelectorAll('.filter-select')[2];
+        const dateToInput = document.querySelectorAll('.filter-select')[3];
+        
+        if (dateFromInput) {
+            dateFromInput.addEventListener('change', (e) => {
+                this.handleFilterChange('dateFrom', e.target.value);
+            });
+        }
+        
+        if (dateToInput) {
+            dateToInput.addEventListener('change', (e) => {
+                this.handleFilterChange('dateTo', e.target.value);
             });
         }
         
@@ -231,7 +261,29 @@ class TransactionsManager {
                 }
             }
             
-            // Other filters will be added in future steps
+            // Date range filter
+            const transactionDate = new Date(transaction.timestamp);
+            
+            // From date filter
+            if (this.currentFilters.dateFrom) {
+                const fromDate = new Date(this.currentFilters.dateFrom);
+                fromDate.setHours(0, 0, 0, 0); // Start of day
+                
+                if (transactionDate < fromDate) {
+                    return false;
+                }
+            }
+            
+            // To date filter
+            if (this.currentFilters.dateTo) {
+                const toDate = new Date(this.currentFilters.dateTo);
+                toDate.setHours(23, 59, 59, 999); // End of day
+                
+                if (transactionDate > toDate) {
+                    return false;
+                }
+            }
+            
             return true;
         });
         
