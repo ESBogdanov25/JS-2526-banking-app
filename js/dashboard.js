@@ -3,12 +3,195 @@
  * Handles real-time user data, transfers, and IBAN validation
  */
 
+/**
+ * Transactions Manager - Handles transactions display, filtering, and search
+ * Best Practice: Single responsibility pattern
+ */
+class TransactionsManager {
+    constructor() {
+        this.currentUser = null;
+        this.allTransactions = [];
+        this.filteredTransactions = [];
+        this.currentFilters = {
+            account: 'all',
+            type: 'all', 
+            category: 'all',
+            dateFrom: '',
+            dateTo: ''
+        };
+        this.isInitialized = false;
+    }
+
+    /**
+     * Initialize transactions manager
+     */
+    async init() {
+        try {
+            console.log('🚀 Initializing Transactions Manager...');
+            
+            this.currentUser = authManager.getCurrentUser();
+            if (!this.currentUser) {
+                throw new Error('No user logged in');
+            }
+
+            await this.loadTransactions();
+            await this.setupFilters();
+            await this.renderTransactions();
+            this.setupEventListeners();
+
+            this.isInitialized = true;
+            console.log('✅ Transactions Manager initialized');
+
+        } catch (error) {
+            console.error('❌ Transactions init failed:', error);
+        }
+    }
+
+    /**
+     * Load all user transactions from data manager
+     */
+    async loadTransactions() {
+        try {
+            this.allTransactions = dataManager.getUserTransactions(this.currentUser.id);
+            this.filteredTransactions = [...this.allTransactions];
+            console.log('📊 Loaded transactions:', this.allTransactions.length);
+            
+        } catch (error) {
+            console.error('❌ Failed to load transactions:', error);
+            this.allTransactions = [];
+            this.filteredTransactions = [];
+        }
+    }
+
+    /**
+     * Render transactions to the page
+     */
+    async renderTransactions() {
+        const transactionsList = document.querySelector('.transactions-list');
+        if (!transactionsList) return;
+
+        // Clear existing content except header
+        const header = transactionsList.querySelector('.transaction-header');
+        transactionsList.innerHTML = '';
+        if (header) {
+            transactionsList.appendChild(header);
+        }
+
+        if (this.filteredTransactions.length === 0) {
+            transactionsList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <h3>No transactions found</h3>
+                    <p>Try adjusting your filters or make your first transaction!</p>
+                </div>
+            `;
+            return;
+        }
+
+        this.filteredTransactions.forEach(transaction => {
+            const transactionElement = this.createTransactionElement(transaction);
+            transactionsList.appendChild(transactionElement);
+        });
+    }
+
+    /**
+     * Create individual transaction element
+     */
+    createTransactionElement(transaction) {
+        const div = document.createElement('div');
+        div.className = 'transaction-row';
+        
+        const isIncome = transaction.type === 'deposit';
+        const amountClass = isIncome ? 'positive' : 'negative';
+        const amountSign = isIncome ? '+' : '-';
+
+        div.innerHTML = `
+            <div class="transaction-desc">
+                <div class="transaction-icon">${this.getTransactionIcon(transaction.category)}</div>
+                <div>
+                    <p class="desc-main">${transaction.description}</p>
+                    <p class="desc-sub">${transaction.recipientName || ''} ${transaction.recipientIBAN ? `(${transaction.recipientIBAN})` : ''}</p>
+                </div>
+            </div>
+            <div class="transaction-date">
+                <p>${transaction.displayDate}</p>
+                <p>${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+            <div class="transaction-amount ${amountClass}">
+                ${amountSign}${new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(transaction.amount)}
+            </div>
+            <div class="transaction-status ${transaction.status}">${transaction.status}</div>
+        `;
+
+        return div;
+    }
+
+    /**
+     * Get appropriate icon for transaction category
+     */
+    getTransactionIcon(category) {
+        const icons = {
+            'shopping': '🛒',
+            'salary': '💰',
+            'rent': '🏠',
+            'transfer': '🔄',
+            'food': '🍽️',
+            'entertainment': '🎬',
+            'transport': '🚗',
+            'general': '💳'
+        };
+        return icons[category] || '💳';
+    }
+
+    /**
+     * Setup filter dropdowns
+     */
+    async setupFilters() {
+        console.log('🔧 Setting up transaction filters...');
+        // Filter implementation will be added in next phase
+    }
+
+    /**
+     * Setup event listeners for filters and search
+     */
+    setupEventListeners() {
+        console.log('🎯 Setting up transaction event listeners...');
+        // Event listeners will be added in next phase
+    }
+
+    /**
+     * Apply filters to transactions
+     */
+    applyFilters() {
+        this.filteredTransactions = this.allTransactions.filter(transaction => {
+            // Filter logic will be implemented in next phase
+            return true;
+        });
+        this.renderTransactions();
+    }
+
+    /**
+     * Refresh transactions data
+     */
+    async refresh() {
+        await this.loadTransactions();
+        await this.renderTransactions();
+    }
+}
+
+/**
+ * Main Dashboard Manager - Handles core dashboard functionality
+ */
 class DashboardManager {
     constructor() {
         this.currentUser = null;
         this.userAccounts = [];
         this.recentTransactions = [];
         this.isInitialized = false;
+        this.transactionsManager = new TransactionsManager();
     }
 
     /**
@@ -30,12 +213,30 @@ class DashboardManager {
             this.setupEventListeners();
             this.setupTransferForm();
 
+            // Initialize transactions manager if on transactions page
+            if (this.getCurrentPage() === 'transactions') {
+                await this.transactionsManager.init();
+            }
+
             this.isInitialized = true;
             console.log('✅ Dashboard Manager initialized successfully');
 
         } catch (error) {
             console.error('❌ Dashboard initialization failed:', error);
         }
+    }
+
+    /**
+     * Get current page identifier
+     */
+    getCurrentPage() {
+        const path = window.location.pathname;
+        
+        if (path.includes('/dashboard/dashboard.html')) return 'dashboard';
+        if (path.includes('/dashboard/accounts.html')) return 'accounts';
+        if (path.includes('/dashboard/transfer.html')) return 'transfer';
+        if (path.includes('/dashboard/transactions.html')) return 'transactions';
+        return 'unknown';
     }
 
     /**
@@ -522,8 +723,8 @@ class DashboardManager {
     }
 
     /**
- * Process transfer form submission
- */
+     * Process transfer form submission
+     */
     async processTransfer(formData) {
         try {
             const fromAccountId = formData.get('fromAccount');
