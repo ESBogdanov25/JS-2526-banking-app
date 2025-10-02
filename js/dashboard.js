@@ -190,12 +190,17 @@ class DashboardManager {
             optionFrom.value = account.id;
             optionFrom.textContent = `${this.getAccountTypeDisplay(account.type)} (${account.maskedAccountNumber}) - ${account.formatBalance()}`;
             fromAccountSelect.appendChild(optionFrom);
-
+            
             const optionTo = document.createElement('option');
             optionTo.value = account.id;
             optionTo.textContent = `My ${this.getAccountTypeDisplay(account.type)} (${account.maskedAccountNumber})`;
             toAccountSelect.appendChild(optionTo);
         });
+
+        const anotherUserOption = document.createElement('option');
+        anotherUserOption.value = 'external';
+        anotherUserOption.textContent = 'Another User';
+        toAccountSelect.appendChild(anotherUserOption);
     }
 
     /**
