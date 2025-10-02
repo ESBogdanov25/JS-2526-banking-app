@@ -204,6 +204,9 @@ class FinSimApp {
                 case 'register':
                     await this.handleRegisterForm(formData);
                     break;
+                case 'transfer':
+                    await this.handleTransferForm(formData);
+                    break;
                 default:
                     console.warn('Unknown form type:', formType);
             }
@@ -343,6 +346,25 @@ class FinSimApp {
         } catch (error) {
             console.error('❌ Navigation error:', error);
             await this.showError('Navigation failed.');
+            await this.hideLoading();
+        }
+    }
+
+    async handleTransferForm(formData) {
+        try {
+            await this.showLoading('Processing transfer...');
+            
+            // Use the dashboard manager to process the transfer
+            if (window.dashboardManager && typeof dashboardManager.processTransfer === 'function') {
+                await dashboardManager.processTransfer(formData);
+            } else {
+                throw new Error('Transfer system is not available');
+            }
+            
+        } catch (error) {
+            console.error('❌ Transfer form error:', error);
+            await this.showError('Transfer failed. Please try again.');
+        } finally {
             await this.hideLoading();
         }
     }

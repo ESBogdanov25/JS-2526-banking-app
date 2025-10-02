@@ -104,7 +104,7 @@ class DashboardManager {
             await this.updateRecentTransactions();
             await this.updateSidebar();
             await this.updateDashboardHeader();
-            await this.updateTransferForm(); // NEW: Update transfer form with real data
+            await this.updateTransferForm();
             
         } catch (error) {
             console.error('❌ UI update failed:', error);
@@ -159,7 +159,7 @@ class DashboardManager {
     }
 
     /**
-     * NEW: Update transfer form with real account data
+     * Update transfer form with real account data
      */
     async updateTransferForm() {
         await this.populateAccountDropdowns();
@@ -168,7 +168,7 @@ class DashboardManager {
     }
 
     /**
-     * NEW: Populate account dropdowns in transfer form
+     * Populate account dropdowns in transfer form
      */
     async populateAccountDropdowns() {
         const fromAccountSelect = document.getElementById('fromAccount');
@@ -190,13 +190,14 @@ class DashboardManager {
             optionFrom.value = account.id;
             optionFrom.textContent = `${this.getAccountTypeDisplay(account.type)} (${account.maskedAccountNumber}) - ${account.formatBalance()}`;
             fromAccountSelect.appendChild(optionFrom);
-            
+
             const optionTo = document.createElement('option');
             optionTo.value = account.id;
             optionTo.textContent = `My ${this.getAccountTypeDisplay(account.type)} (${account.maskedAccountNumber})`;
             toAccountSelect.appendChild(optionTo);
         });
 
+        // Add "Another User" option to To Account dropdown
         const anotherUserOption = document.createElement('option');
         anotherUserOption.value = 'external';
         anotherUserOption.textContent = 'Another User';
@@ -204,7 +205,7 @@ class DashboardManager {
     }
 
     /**
-     * NEW: Get display name for account type
+     * Get display name for account type
      */
     getAccountTypeDisplay(type) {
         const types = {
@@ -216,7 +217,7 @@ class DashboardManager {
     }
 
     /**
-     * NEW: Update "My Accounts & IBANs" section
+     * Update "My Accounts & IBANs" section
      */
     async updateMyAccountsIBANs() {
         const accountIbanList = document.getElementById('accountIbanList');
@@ -239,7 +240,7 @@ class DashboardManager {
     }
 
     /**
-     * NEW: Update recent transfers list with real data
+     * Update recent transfers list with real data
      */
     async updateRecentTransfersList() {
         const recentTransfersList = document.getElementById('recentTransfersList');
@@ -283,7 +284,7 @@ class DashboardManager {
     }
 
     /**
-     * NEW: Setup transfer form event listeners
+     * Setup transfer form event listeners
      */
     setupTransferForm() {
         const toAccountSelect = document.getElementById('toAccount');
@@ -300,6 +301,7 @@ class DashboardManager {
                 } else {
                     externalAccountGroup.style.display = 'none';
                 }
+                this.updateTransferSummary();
             });
         }
 
@@ -310,20 +312,81 @@ class DashboardManager {
             }, 500));
         }
 
-        // Balance info display
+        // Balance info and transfer summary updates
         if (fromAccountSelect && amountInput) {
             fromAccountSelect.addEventListener('change', () => {
                 this.updateBalanceInfo();
+                this.updateTransferSummary();
             });
             
             amountInput.addEventListener('input', () => {
                 this.updateBalanceInfo();
+                this.updateTransferSummary();
+            });
+        }
+
+        // Transfer type changes
+        if (toAccountSelect) {
+            toAccountSelect.addEventListener('change', () => {
+                this.updateTransferSummary();
             });
         }
     }
 
     /**
-     * NEW: Validate IBAN and show recipient info
+     * Calculate transfer fee based on amount and type
+     */
+    calculateTransferFee(amount, isExternal = false) {
+        // Internal transfer fee: 1% with $1 minimum, $5 maximum
+        if (!isExternal) {
+            const fee = Math.max(1, Math.min(amount * 0.01, 5));
+            return parseFloat(fee.toFixed(2));
+        }
+        
+        // External transfer fee: 2% with $2 minimum, $15 maximum
+        const fee = Math.max(2, Math.min(amount * 0.02, 15));
+        return parseFloat(fee.toFixed(2));
+    }
+
+    /**
+     * Update transfer summary with dynamic calculations
+     */
+    updateTransferSummary() {
+        const amountInput = document.getElementById('amount');
+        const toAccountSelect = document.getElementById('toAccount');
+        const transferSummary = document.getElementById('transferSummary');
+        const totalAmountElement = document.getElementById('totalAmount');
+        const feeAmountElement = document.getElementById('feeAmount');
+        
+        if (!amountInput || !toAccountSelect || !transferSummary || !totalAmountElement || !feeAmountElement) return;
+        
+        const amount = parseFloat(amountInput.value) || 0;
+        const isExternal = toAccountSelect.value === 'external';
+        
+        if (amount > 0) {
+            const fee = this.calculateTransferFee(amount, isExternal);
+            const total = amount + fee;
+            
+            transferSummary.style.display = 'block';
+            
+            // Update fee display
+            feeAmountElement.textContent = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(fee);
+            
+            // Update total amount
+            totalAmountElement.textContent = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(total);
+        } else {
+            transferSummary.style.display = 'none';
+        }
+    }
+
+    /**
+     * Validate IBAN and show recipient info
      */
     async validateIBAN(iban) {
         const validationElement = document.getElementById('ibanValidation');
@@ -367,7 +430,7 @@ class DashboardManager {
     }
 
     /**
-     * NEW: Update balance information based on selected account
+     * Update balance information based on selected account
      */
     async updateBalanceInfo() {
         const fromAccountSelect = document.getElementById('fromAccount');
@@ -400,7 +463,7 @@ class DashboardManager {
     }
 
     /**
-     * NEW: Process transfer form submission
+     * Process transfer form submission
      */
     async processTransfer(formData) {
         try {
@@ -456,6 +519,7 @@ class DashboardManager {
                 document.getElementById('externalAccountGroup').style.display = 'none';
                 document.getElementById('ibanValidation').style.display = 'none';
                 document.getElementById('balanceInfo').style.display = 'none';
+                document.getElementById('transferSummary').style.display = 'none';
                 
             } else {
                 throw new Error(transferResult.error);
@@ -677,19 +741,19 @@ class DashboardManager {
     }
 }
 
-// Create and initialize dashboard manager
-const dashboardManager = new DashboardManager();
+// Create global dashboard manager instance
+window.dashboardManager = new DashboardManager();
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        dashboardManager.init();
+        window.dashboardManager.init();
     });
 } else {
-    dashboardManager.init();
+    window.dashboardManager.init();
 }
 
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = dashboardManager;
+    module.exports = DashboardManager;
 }
