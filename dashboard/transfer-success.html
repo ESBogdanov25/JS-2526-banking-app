@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Successful - FinSim</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="../index.html"><h1>FinSim</h1></a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="success-container">
+        <div class="success-card">
+            <div class="success-icon">✅</div>
+            <h1>Transfer Successful!</h1>
+            <p class="success-message">Your money transfer has been completed successfully.</p>
+            
+            <div class="transfer-details">
+                <div class="detail-item">
+                    <span class="detail-label">Amount:</span>
+                    <span class="detail-value" id="transferAmount">$0.00</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value" id="transferDate">Just now</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value success-status">Completed</span>
+                </div>
+            </div>
+
+            <div class="success-actions">
+                <a href="dashboard.html" class="btn btn-primary">Back to Dashboard</a>
+                <a href="transfer.html" class="btn btn-secondary">Make Another Transfer</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get transfer details from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const amount = urlParams.get('amount');
+        
+        if (amount) {
+            document.getElementById('transferAmount').textContent = 
+                '$' + parseFloat(amount).toLocaleString();
+        }
+        
+        document.getElementById('transferDate').textContent = 
+            new Date().toLocaleString();
+    </script>
+</body>
+</html>

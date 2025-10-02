@@ -497,9 +497,33 @@ class DashboardManager {
         }
     }
 
+    // Show success message
+    showTransferSuccess(message) {
+        const successElement = document.getElementById('transferSuccess');
+        const messageElement = document.getElementById('successMessage');
+        
+        if (successElement && messageElement) {
+            messageElement.textContent = message;
+            successElement.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                this.hideTransferSuccess();
+            }, 5000);
+        }
+    }
+
+    // Hide success message
+    hideTransferSuccess() {
+        const successElement = document.getElementById('transferSuccess');
+        if (successElement) {
+            successElement.style.display = 'none';
+        }
+    }
+
     /**
-     * Process transfer form submission
-     */
+ * Process transfer form submission
+ */
     async processTransfer(formData) {
         try {
             const fromAccountId = formData.get('fromAccount');
@@ -544,17 +568,9 @@ class DashboardManager {
             }
 
             if (transferResult.success) {
-                await this.showSuccess('Transfer completed successfully!');
-                
-                // Refresh data to show updated balances
-                await this.refreshData();
-                
-                // Reset form
-                document.getElementById('transferForm').reset();
-                document.getElementById('externalAccountGroup').style.display = 'none';
-                document.getElementById('ibanValidation').style.display = 'none';
-                document.getElementById('balanceInfo').style.display = 'none';
-                document.getElementById('transferSummary').style.display = 'none';
+                // ✅ REDIRECT TO SUCCESS PAGE
+                const successUrl = `transfer-success.html?amount=${amount}`;
+                window.location.href = successUrl;
                 
             } else {
                 throw new Error(transferResult.error);
