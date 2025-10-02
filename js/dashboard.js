@@ -147,11 +147,29 @@ class TransactionsManager {
     }
 
     /**
-     * Setup filter dropdowns
+     * Setup filter dropdowns with real account data
      */
     async setupFilters() {
-        console.log('🔧 Setting up transaction filters...');
-        // Filter implementation will be added in next phase
+        const accountFilter = document.querySelector('.filter-select'); // First filter select
+        if (!accountFilter) return;
+
+        console.log('🔧 Setting up account filter...');
+
+        // Clear existing options
+        accountFilter.innerHTML = '<option value="all">All Accounts</option>';
+
+        // Get user's accounts
+        const userAccounts = dataManager.getAccountsByUserId(this.currentUser.id);
+        
+        // Add account options to filter
+        userAccounts.forEach(account => {
+            const option = document.createElement('option');
+            option.value = account.id;
+            option.textContent = `${this.getAccountTypeDisplay(account.type)} (${account.maskedAccountNumber})`;
+            accountFilter.appendChild(option);
+        });
+
+        console.log('✅ Account filter populated with', userAccounts.length, 'accounts');
     }
 
     /**
@@ -159,18 +177,58 @@ class TransactionsManager {
      */
     setupEventListeners() {
         console.log('🎯 Setting up transaction event listeners...');
-        // Event listeners will be added in next phase
+        
+        // Account filter
+        const accountFilter = document.querySelector('.filter-select'); // First filter select
+        if (accountFilter) {
+            accountFilter.addEventListener('change', (e) => {
+                this.handleFilterChange('account', e.target.value);
+            });
+        }
+        
+        console.log('✅ Transaction event listeners setup complete');
     }
 
     /**
-     * Apply filters to transactions
+     * Apply all active filters to transactions
      */
     applyFilters() {
         this.filteredTransactions = this.allTransactions.filter(transaction => {
-            // Filter logic will be implemented in next phase
+            // Account filter
+            if (this.currentFilters.account !== 'all') {
+                if (transaction.accountId !== this.currentFilters.account) {
+                    return false;
+                }
+            }
+            
+            // Other filters will be added in future steps
             return true;
         });
+        
         this.renderTransactions();
+    }
+
+    /**
+     * Handle filter changes
+     */
+    handleFilterChange(filterType, value) {
+        this.currentFilters[filterType] = value;
+        this.applyFilters();
+        
+        console.log('🔍 Filter updated:', filterType, value);
+        console.log('📊 Showing', this.filteredTransactions.length, 'transactions');
+    }
+
+    /**
+     * Get display name for account type (same as DashboardManager)
+     */
+    getAccountTypeDisplay(type) {
+        const types = {
+            'checking': 'Checking Account',
+            'savings': 'Savings Account', 
+            'investment': 'Investment Account'
+        };
+        return types[type] || type;
     }
 
     /**
@@ -793,7 +851,7 @@ class DashboardManager {
                 clearTimeout(timeout);
                 func(...args);
             };
-            clearTimeout(timeout);
+            clearTimeout(timetimeout);
             timeout = setTimeout(later, wait);
         };
     }
