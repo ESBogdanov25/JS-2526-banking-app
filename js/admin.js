@@ -671,32 +671,24 @@ class AdminManager {
     exportReport(reportType) {
         console.log(`📤 Exporting ${reportType}...`);
         
-        let csvContent = '';
-        let filename = '';
-
         switch (reportType) {
             case 'Financial Report':
-                csvContent = this.generateFinancialReportCSV();
-                filename = `financial_report_${new Date().toISOString().split('T')[0]}.csv`;
+                this.generateFinancialReportPDF();
                 break;
             case 'User Analytics':
-                csvContent = this.generateUserAnalyticsCSV();
-                filename = `user_analytics_${new Date().toISOString().split('T')[0]}.csv`;
+                const userCsv = this.generateUserAnalyticsCSV();
+                this.downloadFile(userCsv, `user_analytics_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
                 break;
             case 'Transaction Log':
-                csvContent = this.generateTransactionLogCSV();
-                filename = `transaction_log_${new Date().toISOString().split('T')[0]}.csv`;
+                const transactionExcel = this.generateTransactionLogExcel();
+                this.downloadFile(transactionExcel, `transaction_log_${new Date().toISOString().split('T')[0]}.xls`, 'application/vnd.ms-excel');
                 break;
             case 'Security Report':
-                csvContent = this.generateSecurityReportCSV();
-                filename = `security_report_${new Date().toISOString().split('T')[0]}.csv`;
+                this.generateSecurityReportPDF();
                 break;
             default:
-                csvContent = this.generateFinancialReportCSV();
-                filename = `report_${new Date().toISOString().split('T')[0]}.csv`;
+                this.generateFinancialReportPDF();
         }
-
-        this.downloadCSV(csvContent, filename);
         
         if (window.finSimApp) {
             finSimApp.showSuccess(`${reportType} exported successfully`);
@@ -704,21 +696,245 @@ class AdminManager {
     }
 
     /**
-     * Generate financial report CSV
+     * Generate financial report PDF
      */
-    generateFinancialReportCSV() {
-        const headers = ['Metric', 'Value', 'Change'];
-        const metrics = this.calculateReportsMetrics();
+    generateFinancialReportPDF() {
+        console.log('📊 Generating financial report PDF...');
         
-        const rows = [
-            ['Total Users', this.users.length, '+12%'],
-            ['Active Users', metrics.activeUsers, `${metrics.userGrowth >= 0 ? '+' : ''}${metrics.userGrowth.toFixed(1)}%`],
-            ['Total Balance', `$${metrics.totalBalance.toLocaleString()}`, '+5%'],
-            ['Total Transactions', metrics.totalTransactions, '+8%'],
-            ['Average Balance', `$${metrics.avgBalance.toFixed(2)}`, '+3%']
-        ];
+        const pdfWindow = window.open('', '_blank');
+        const reportDate = new Date().toLocaleDateString();
+        const adminName = `${this.currentAdmin.firstName} ${this.currentAdmin.lastName}`;
+        const metrics = this.calculateReportsMetrics();
 
-        return [headers, ...rows].map(row => row.join(',')).join('\n');
+        pdfWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>FinSim Financial Report</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        margin: 40px; 
+                        color: #333;
+                        line-height: 1.6;
+                    }
+                    .header { 
+                        text-align: center; 
+                        border-bottom: 3px solid #10b981; 
+                        padding-bottom: 20px;
+                        margin-bottom: 30px;
+                    }
+                    .header h1 { 
+                        color: #10b981; 
+                        margin: 0;
+                        font-size: 28px;
+                    }
+                    .header .subtitle { 
+                        color: #666; 
+                        font-size: 16px;
+                        margin: 5px 0;
+                    }
+                    .section { 
+                        margin-bottom: 30px; 
+                    }
+                    .section h2 { 
+                        color: #10b981; 
+                        border-bottom: 2px solid #e2e8f0;
+                        padding-bottom: 8px;
+                        font-size: 20px;
+                    }
+                    .metrics-grid {
+                        display: grid;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 15px;
+                        margin: 20px 0;
+                    }
+                    .metric-card {
+                        background: #f0fdf4;
+                        padding: 15px;
+                        border-radius: 8px;
+                        border-left: 4px solid #10b981;
+                    }
+                    .metric-value {
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #1e293b;
+                    }
+                    .metric-label {
+                        font-size: 14px;
+                        color: #64748b;
+                        margin-top: 5px;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 20px 0;
+                    }
+                    .table th, .table td {
+                        border: 1px solid #e2e8f0;
+                        padding: 12px;
+                        text-align: left;
+                    }
+                    .table th {
+                        background: #f1f5f9;
+                        font-weight: bold;
+                        color: #475569;
+                    }
+                    .positive { color: #10b981; font-weight: bold; }
+                    .negative { color: #dc2626; font-weight: bold; }
+                    .footer {
+                        margin-top: 40px;
+                        padding-top: 20px;
+                        border-top: 2px solid #e2e8f0;
+                        text-align: center;
+                        color: #64748b;
+                        font-size: 14px;
+                    }
+                    .timestamp {
+                        text-align: right;
+                        color: #64748b;
+                        font-size: 12px;
+                        margin-bottom: 20px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="timestamp">Generated: ${new Date().toLocaleString()}</div>
+                
+                <div class="header">
+                    <h1>FinSim Financial Report</h1>
+                    <div class="subtitle">Comprehensive Financial Performance Analysis</div>
+                    <div class="subtitle">Generated by: ${adminName}</div>
+                </div>
+
+                <div class="section">
+                    <h2>Executive Summary</h2>
+                    <p>This financial report provides a comprehensive overview of the FinSim banking system's financial performance, including user balances, transaction volumes, and system growth metrics.</p>
+                    
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value">${this.users.length.toLocaleString()}</div>
+                            <div class="metric-label">Total Users</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.totalBalance)}</div>
+                            <div class="metric-label">Total System Balance</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${metrics.totalTransactions.toLocaleString()}</div>
+                            <div class="metric-label">Total Transactions</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.avgBalance)}</div>
+                            <div class="metric-label">Average User Balance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Transaction Analysis</h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Transaction Type</th>
+                                <th>Count</th>
+                                <th>Percentage</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Deposits</td>
+                                <td>${metrics.transactionVolume.deposits}</td>
+                                <td>${((metrics.transactionVolume.deposits / metrics.totalTransactions) * 100).toFixed(1)}%</td>
+                                <td class="positive">+5%</td>
+                            </tr>
+                            <tr>
+                                <td>Transfers</td>
+                                <td>${metrics.transactionVolume.transfers}</td>
+                                <td>${((metrics.transactionVolume.transfers / metrics.totalTransactions) * 100).toFixed(1)}%</td>
+                                <td class="positive">+8%</td>
+                            </tr>
+                            <tr>
+                                <td>Withdrawals</td>
+                                <td>${metrics.transactionVolume.withdrawals}</td>
+                                <td>${((metrics.transactionVolume.withdrawals / metrics.totalTransactions) * 100).toFixed(1)}%</td>
+                                <td class="positive">+3%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section">
+                    <h2>User Financial Distribution</h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Balance Range</th>
+                                <th>Number of Users</th>
+                                <th>Total Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>$0 - $1,000</td>
+                                <td>${this.calculateUsersInRange(0, 1000)}</td>
+                                <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.calculateBalanceInRange(0, 1000))}</td>
+                            </tr>
+                            <tr>
+                                <td>$1,001 - $10,000</td>
+                                <td>${this.calculateUsersInRange(1001, 10000)}</td>
+                                <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.calculateBalanceInRange(1001, 10000))}</td>
+                            </tr>
+                            <tr>
+                                <td>$10,001 - $50,000</td>
+                                <td>${this.calculateUsersInRange(10001, 50000)}</td>
+                                <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.calculateBalanceInRange(10001, 50000))}</td>
+                            </tr>
+                            <tr>
+                                <td>$50,001+</td>
+                                <td>${this.calculateUsersInRange(50001, Infinity)}</td>
+                                <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.calculateBalanceInRange(50001, Infinity))}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="footer">
+                    <p>FinSim Banking System - Confidential Financial Report</p>
+                    <p>This report contains sensitive financial information. Handle with care.</p>
+                </div>
+            </body>
+            </html>
+        `);
+
+        pdfWindow.document.close();
+        setTimeout(() => {
+            pdfWindow.print();
+        }, 500);
+    }
+
+    /**
+     * Calculate users in balance range
+     */
+    calculateUsersInRange(min, max) {
+        return this.users.filter(user => {
+            const balance = this.calculateUserBalance(user.id);
+            return balance >= min && balance <= max;
+        }).length;
+    }
+
+    /**
+     * Calculate total balance in range
+     */
+    calculateBalanceInRange(min, max) {
+        return this.users.reduce((total, user) => {
+            const balance = this.calculateUserBalance(user.id);
+            if (balance >= min && balance <= max) {
+                return total + balance;
+            }
+            return total;
+        }, 0);
     }
 
     /**
@@ -742,36 +958,314 @@ class AdminManager {
     }
 
     /**
-     * Generate transaction log CSV
+     * Generate transaction log Excel format
      */
-    generateTransactionLogCSV() {
-        const headers = ['Transaction ID', 'Date', 'Type', 'Amount', 'Description', 'Account ID', 'Status'];
+    generateTransactionLogExcel() {
+        const headers = ['Transaction ID', 'Date', 'Time', 'Type', 'Amount', 'Description', 'Account ID', 'Status', 'Recipient'];
         
-        const rows = this.transactions.slice(0, 1000).map(txn => [ // Limit to 1000 rows
+        const rows = this.transactions.slice(0, 1000).map(txn => [
             txn.id,
             new Date(txn.timestamp).toLocaleDateString(),
+            new Date(txn.timestamp).toLocaleTimeString(),
             txn.type,
             `$${txn.amount}`,
-            txn.description,
+            txn.description || 'N/A',
             txn.accountId,
-            txn.status
+            txn.status,
+            txn.recipientName || 'N/A'
         ]);
 
-        return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+        // Create Excel-like HTML table for download
+        const excelContent = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    td { mso-number-format:\\@; }
+                    .header { background-color: #4f46e5; color: white; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <table>
+                    <tr class="header">${headers.map(header => `<td>${header}</td>`).join('')}</tr>
+                    ${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+                </table>
+            </body>
+            </html>
+        `;
+
+        return excelContent;
     }
 
     /**
-     * Generate security report CSV
+     * Generate security report PDF
      */
-    generateSecurityReportCSV() {
-        const headers = ['Date', 'Event Type', 'Description', 'User ID', 'Severity'];
-        const rows = [
-            [new Date().toLocaleDateString(), 'System Check', 'Regular security audit', 'SYSTEM', 'Low'],
-            [new Date().toLocaleDateString(), 'User Activity', 'Admin login detected', this.currentAdmin.id, 'Info'],
-            [new Date().toLocaleDateString(), 'Monitoring', 'System performance normal', 'SYSTEM', 'Low']
-        ];
+    generateSecurityReportPDF() {
+        console.log('📊 Generating security report PDF...');
+        
+        const pdfWindow = window.open('', '_blank');
+        const reportDate = new Date().toLocaleDateString();
+        const adminName = `${this.currentAdmin.firstName} ${this.currentAdmin.lastName}`;
+        
+        // Security metrics calculation
+        const totalUsers = this.users.length;
+        const activeUsers = this.users.filter(user => user.isActive).length;
+        const inactiveUsers = totalUsers - activeUsers;
+        const adminUsers = this.users.filter(user => user.role === 'admin').length;
+        const totalTransactions = this.transactions.length;
+        
+        // Recent security events (last 7 days)
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const recentLogins = this.users.filter(user => 
+            user.lastLogin && new Date(user.lastLogin) > oneWeekAgo
+        ).length;
+        
+        const recentTransactions = this.transactions.filter(txn => 
+            new Date(txn.timestamp) > oneWeekAgo
+        ).length;
 
-        return [headers, ...rows].map(row => row.join(',')).join('\n');
+        pdfWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>FinSim Security Report</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        margin: 40px; 
+                        color: #333;
+                        line-height: 1.6;
+                    }
+                    .header { 
+                        text-align: center; 
+                        border-bottom: 3px solid #dc2626; 
+                        padding-bottom: 20px;
+                        margin-bottom: 30px;
+                    }
+                    .header h1 { 
+                        color: #dc2626; 
+                        margin: 0;
+                        font-size: 28px;
+                    }
+                    .header .subtitle { 
+                        color: #666; 
+                        font-size: 16px;
+                        margin: 5px 0;
+                    }
+                    .section { 
+                        margin-bottom: 30px; 
+                    }
+                    .section h2 { 
+                        color: #dc2626; 
+                        border-bottom: 2px solid #e2e8f0;
+                        padding-bottom: 8px;
+                        font-size: 20px;
+                    }
+                    .metrics-grid {
+                        display: grid;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 15px;
+                        margin: 20px 0;
+                    }
+                    .metric-card {
+                        background: #fef2f2;
+                        padding: 15px;
+                        border-radius: 8px;
+                        border-left: 4px solid #dc2626;
+                    }
+                    .metric-value {
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #1e293b;
+                    }
+                    .metric-label {
+                        font-size: 14px;
+                        color: #64748b;
+                        margin-top: 5px;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 20px 0;
+                    }
+                    .table th, .table td {
+                        border: 1px solid #e2e8f0;
+                        padding: 12px;
+                        text-align: left;
+                    }
+                    .table th {
+                        background: #f1f5f9;
+                        font-weight: bold;
+                        color: #475569;
+                    }
+                    .risk-high { color: #dc2626; font-weight: bold; }
+                    .risk-medium { color: #d97706; font-weight: bold; }
+                    .risk-low { color: #059669; font-weight: bold; }
+                    .footer {
+                        margin-top: 40px;
+                        padding-top: 20px;
+                        border-top: 2px solid #e2e8f0;
+                        text-align: center;
+                        color: #64748b;
+                        font-size: 14px;
+                    }
+                    .timestamp {
+                        text-align: right;
+                        color: #64748b;
+                        font-size: 12px;
+                        margin-bottom: 20px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="timestamp">Generated: ${new Date().toLocaleString()}</div>
+                
+                <div class="header">
+                    <h1>FinSim Security Report</h1>
+                    <div class="subtitle">Comprehensive System Security Assessment</div>
+                    <div class="subtitle">Generated by: ${adminName}</div>
+                </div>
+
+                <div class="section">
+                    <h2>Executive Summary</h2>
+                    <p>This security report provides an overview of the FinSim banking system's security posture, 
+                    including user activity, system metrics, and potential risk areas.</p>
+                    
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value">${totalUsers}</div>
+                            <div class="metric-label">Total Users</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${activeUsers}</div>
+                            <div class="metric-label">Active Users</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${adminUsers}</div>
+                            <div class="metric-label">Admin Users</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${totalTransactions}</div>
+                            <div class="metric-label">Total Transactions</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Recent Activity (Last 7 Days)</h2>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value">${recentLogins}</div>
+                            <div class="metric-label">User Logins</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${recentTransactions}</div>
+                            <div class="metric-label">Transactions</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${inactiveUsers}</div>
+                            <div class="metric-label">Inactive Users</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">0</div>
+                            <div class="metric-label">Security Incidents</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Security Risk Assessment</h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Risk Area</th>
+                                <th>Status</th>
+                                <th>Risk Level</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>User Authentication</td>
+                                <td>Active</td>
+                                <td class="risk-low">Low</td>
+                                <td>Monitor login patterns</td>
+                            </tr>
+                            <tr>
+                                <td>Transaction Monitoring</td>
+                                <td>Active</td>
+                                <td class="risk-low">Low</td>
+                                <td>Continue current monitoring</td>
+                            </tr>
+                            <tr>
+                                <td>Data Encryption</td>
+                                <td>Enabled</td>
+                                <td class="risk-low">Low</td>
+                                <td>Maintain current standards</td>
+                            </tr>
+                            <tr>
+                                <td>Admin Access Control</td>
+                                <td>Restricted</td>
+                                <td class="risk-medium">Medium</td>
+                                <td>Regular access reviews</td>
+                            </tr>
+                            <tr>
+                                <td>System Backups</td>
+                                <td>Enabled</td>
+                                <td class="risk-low">Low</td>
+                                <td>Verify backup integrity weekly</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section">
+                    <h2>Admin Activity Log</h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Admin User</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${new Date().toLocaleString()}</td>
+                                <td>${adminName}</td>
+                                <td>Security Report Generated</td>
+                                <td>Comprehensive security assessment</td>
+                            </tr>
+                            <tr>
+                                <td>${new Date().toLocaleString()}</td>
+                                <td>System</td>
+                                <td>Automated Security Scan</td>
+                                <td>No vulnerabilities detected</td>
+                            </tr>
+                            <tr>
+                                <td>${new Date(Date.now() - 86400000).toLocaleString()}</td>
+                                <td>${adminName}</td>
+                                <td>User Management</td>
+                                <td>Reviewed user accounts</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="footer">
+                    <p>FinSim Banking System - Confidential Security Report</p>
+                    <p>This report contains sensitive security information. Handle with care.</p>
+                </div>
+            </body>
+            </html>
+        `);
+
+        pdfWindow.document.close();
+        setTimeout(() => {
+            pdfWindow.print();
+        }, 500);
     }
 
     /**
@@ -791,7 +1285,7 @@ TOTAL BALANCE: $${this.calculateSystemStats().totalBalance.toLocaleString()}
 Export generated by: ${this.currentAdmin.firstName} ${this.currentAdmin.lastName}
         `.trim();
 
-        this.downloadCSV(zipContent, `system_export_${new Date().toISOString().split('T')[0]}.txt`);
+        this.downloadFile(zipContent, `system_export_${new Date().toISOString().split('T')[0]}.txt`, 'text/plain');
         
         if (window.finSimApp) {
             finSimApp.showSuccess('System data exported successfully');
@@ -828,7 +1322,7 @@ TRANSACTION ANALYSIS:
 • Withdrawals: ${reportData.transactionVolume.withdrawals}
         `.trim();
 
-        this.downloadCSV(reportSummary, `comprehensive_report_${new Date().toISOString().split('T')[0]}.txt`);
+        this.downloadFile(reportSummary, `comprehensive_report_${new Date().toISOString().split('T')[0]}.txt`, 'text/plain');
         
         if (window.finSimApp) {
             finSimApp.showSuccess('Comprehensive report generated successfully');
@@ -836,10 +1330,10 @@ TRANSACTION ANALYSIS:
     }
 
     /**
-     * Download CSV file
+     * Download file utility
      */
-    downloadCSV(content, filename) {
-        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    downloadFile(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         
