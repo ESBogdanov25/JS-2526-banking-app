@@ -287,7 +287,7 @@ class Transaction {
  */
 class DataManager {
     constructor() {
-        this.storage = storage;
+        this.storage = storage; // Just use the global directly
     }
 
     // User Methods
@@ -516,6 +516,41 @@ class DataManager {
     getRecentTransactions(userId, limit = 10) {
         const transactions = this.getUserTransactions(userId);
         return transactions.slice(0, limit);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initializeSystem, 1000);
+});
+
+function initializeSystem() {
+    if (!storage) {
+        console.log('⏳ Waiting for storage...');
+        setTimeout(initializeSystem, 500);
+        return;
+    }
+
+    const users = storage.get('users', []);
+    const adminExists = users.some(user => user.role === 'admin');
+    
+    if (!adminExists) {
+        console.log('👑 Creating default admin user...');
+        
+        const adminUser = {
+            id: 'admin_' + Date.now(),
+            email: 'admin@finsim.com',
+            password: btoa('admin123' + 'finsim_salt_v2'),
+            firstName: 'System',
+            lastName: 'Administrator', 
+            role: 'admin',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            lastLogin: null
+        };
+        
+        users.push(adminUser);
+        storage.set('users', users);
+        console.log('✅ Default admin user created');
     }
 }
 

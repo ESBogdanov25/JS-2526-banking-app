@@ -9,12 +9,14 @@ class AuthManager {
         this.currentUser = null;
         this.init();
     }
-
     /**
      * Initialize authentication system
      */
     async init() {
         try {
+            // Wait for storage to be available
+            await this.waitForStorage();
+            
             this.currentUser = await this.storage.get('currentUser');
             
             if (this.currentUser) {
@@ -27,6 +29,24 @@ class AuthManager {
             console.error('❌ Auth initialization failed:', error);
             this.currentUser = null;
         }
+    }
+
+    async waitForStorage(maxWaitTime = 5000) {
+        return new Promise((resolve, reject) => {
+            const startTime = Date.now();
+            
+            const checkStorage = () => {
+                if (this.storage && typeof this.storage.get === 'function') {
+                    resolve();
+                } else if (Date.now() - startTime > maxWaitTime) {
+                    reject(new Error('Storage system timeout'));
+                } else {
+                    setTimeout(checkStorage, 100);
+                }
+            };
+            
+            checkStorage();
+        });
     }
 
     /**
