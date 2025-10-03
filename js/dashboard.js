@@ -17,7 +17,14 @@ class TransactionsManager {
             type: 'all', 
             category: 'all',
             dateFrom: '',
-            dateTo: ''
+            dateTo: '',
+            search: ''
+        };
+        this.pagination = {
+            currentPage: 1,
+            pageSize: 10,
+            totalPages: 1,
+            totalTransactions: 0
         };
         this.isInitialized = false;
     }
@@ -38,6 +45,7 @@ class TransactionsManager {
             await this.setupFilters();
             await this.renderTransactions();
             this.setupEventListeners();
+            this.setupPagination();
 
             this.isInitialized = true;
             console.log('✅ Transactions Manager initialized');
@@ -64,7 +72,7 @@ class TransactionsManager {
     }
 
     /**
-     * Render transactions to the page
+     * Render transactions to the page with pagination
      */
     async renderTransactions() {
         const transactionsList = document.querySelector('.transactions-list');
@@ -77,7 +85,15 @@ class TransactionsManager {
             transactionsList.appendChild(header);
         }
 
-        if (this.filteredTransactions.length === 0) {
+        // Calculate pagination
+        this.calculatePagination();
+        
+        // Get transactions for current page
+        const startIndex = (this.pagination.currentPage - 1) * this.pagination.pageSize;
+        const endIndex = startIndex + this.pagination.pageSize;
+        const pageTransactions = this.filteredTransactions.slice(startIndex, endIndex);
+
+        if (pageTransactions.length === 0) {
             transactionsList.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">📝</div>
@@ -85,13 +101,16 @@ class TransactionsManager {
                     <p>Try adjusting your filters or make your first transaction!</p>
                 </div>
             `;
+            this.renderPagination();
             return;
         }
 
-        this.filteredTransactions.forEach(transaction => {
+        pageTransactions.forEach(transaction => {
             const transactionElement = this.createTransactionElement(transaction);
             transactionsList.appendChild(transactionElement);
         });
+
+        this.renderPagination();
     }
 
     /**
@@ -202,7 +221,7 @@ class TransactionsManager {
     }
 
     /**
-     * Setup event listeners for filters and search
+     * Setup event listeners for filters, search, and pagination
      */
     setupEventListeners() {
         console.log('🎯 Setting up transaction event listeners...');
@@ -239,7 +258,45 @@ class TransactionsManager {
             });
         }
         
+        // Search functionality
+        this.setupSearch();
+        
         console.log('✅ Transaction event listeners setup complete');
+    }
+
+    /**
+     * Setup search functionality with debouncing
+     */
+    setupSearch() {
+        // Create search input if it doesn't exist
+        let searchInput = document.querySelector('.transactions-search');
+        
+        if (!searchInput) {
+            const searchContainer = document.querySelector('.transactions-controls');
+            if (searchContainer) {
+                searchInput = document.createElement('input');
+                searchInput.type = 'text';
+                searchInput.className = 'transactions-search';
+                searchInput.placeholder = 'Search transactions...';
+                searchContainer.appendChild(searchInput);
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', this.debounce((e) => {
+                this.handleFilterChange('search', e.target.value);
+            }, 300));
+            
+            console.log('✅ Search functionality setup');
+        }
+    }
+
+    /**
+     * Setup pagination controls
+     */
+    setupPagination() {
+        console.log('🔢 Setting up pagination...');
+        // Pagination controls will be rendered dynamically
     }
 
     /**
@@ -284,9 +341,31 @@ class TransactionsManager {
                 }
             }
             
+            // Search filter
+            if (this.currentFilters.search) {
+                const searchTerm = this.currentFilters.search.toLowerCase();
+                const searchableFields = [
+                    transaction.description,
+                    transaction.recipientName,
+                    transaction.recipientIBAN,
+                    transaction.amount.toString(),
+                    transaction.category
+                ].filter(field => field).map(field => field.toLowerCase());
+                
+                const matchesSearch = searchableFields.some(field => 
+                    field.includes(searchTerm)
+                );
+                
+                if (!matchesSearch) {
+                    return false;
+                }
+            }
+            
             return true;
         });
         
+        // Reset to first page when filters change
+        this.pagination.currentPage = 1;
         this.renderTransactions();
     }
 
@@ -299,6 +378,103 @@ class TransactionsManager {
         
         console.log('🔍 Filter updated:', filterType, value);
         console.log('📊 Showing', this.filteredTransactions.length, 'transactions');
+    }
+
+    /**
+     * Calculate pagination values
+     */
+    calculatePagination() {
+        this.pagination.totalTransactions = this.filteredTransactions.length;
+        this.pagination.totalPages = Math.ceil(this.pagination.totalTransactions / this.pagination.pageSize);
+        
+        // Ensure current page is valid
+        if (this.pagination.currentPage > this.pagination.totalPages) {
+            this.pagination.currentPage = Math.max(1, this.pagination.totalPages);
+        }
+    }
+
+    /**
+     * Render pagination controls
+     */
+    renderPagination() {
+        let paginationContainer = document.querySelector('.pagination');
+        
+        if (!paginationContainer) {
+            const transactionsContainer = document.querySelector('.transactions-list').parentElement;
+            paginationContainer = document.createElement('div');
+            paginationContainer.className = 'pagination';
+            transactionsContainer.appendChild(paginationContainer);
+        }
+
+        if (this.pagination.totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+            return;
+        }
+
+        paginationContainer.style.display = 'flex';
+        paginationContainer.innerHTML = '';
+
+        // Previous button
+        const prevButton = document.createElement('button');
+        prevButton.className = `pagination-btn ${this.pagination.currentPage === 1 ? 'disabled' : ''}`;
+        prevButton.textContent = 'Previous';
+        prevButton.disabled = this.pagination.currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (this.pagination.currentPage > 1) {
+                this.pagination.currentPage--;
+                this.renderTransactions();
+            }
+        });
+        paginationContainer.appendChild(prevButton);
+
+        // Page numbers
+        const startPage = Math.max(1, this.pagination.currentPage - 2);
+        const endPage = Math.min(this.pagination.totalPages, startPage + 4);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.className = `pagination-btn ${i === this.pagination.currentPage ? 'active' : ''}`;
+            pageButton.textContent = i;
+            pageButton.addEventListener('click', () => {
+                this.pagination.currentPage = i;
+                this.renderTransactions();
+            });
+            paginationContainer.appendChild(pageButton);
+        }
+
+        // Next button
+        const nextButton = document.createElement('button');
+        nextButton.className = `pagination-btn ${this.pagination.currentPage === this.pagination.totalPages ? 'disabled' : ''}`;
+        nextButton.textContent = 'Next';
+        nextButton.disabled = this.pagination.currentPage === this.pagination.totalPages;
+        nextButton.addEventListener('click', () => {
+            if (this.pagination.currentPage < this.pagination.totalPages) {
+                this.pagination.currentPage++;
+                this.renderTransactions();
+            }
+        });
+        paginationContainer.appendChild(nextButton);
+
+        // Page info
+        const pageInfo = document.createElement('div');
+        pageInfo.className = 'pagination-info';
+        pageInfo.textContent = `Page ${this.pagination.currentPage} of ${this.pagination.totalPages} (${this.pagination.totalTransactions} transactions)`;
+        paginationContainer.appendChild(pageInfo);
+    }
+
+    /**
+     * Utility method for debouncing
+     */
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
 
     /**
@@ -318,6 +494,7 @@ class TransactionsManager {
      */
     async refresh() {
         await this.loadTransactions();
+        this.pagination.currentPage = 1;
         await this.renderTransactions();
     }
 }
