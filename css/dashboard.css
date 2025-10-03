@@ -698,3 +698,172 @@
     font-size: 14px;
     color: var(--text-light);
 }
+
+/* Enhanced Transfer Form Labels */
+.form-group {
+    margin-bottom: var(--space-6);
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--space-3);
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: var(--font-size-sm);
+    transition: all 0.3s ease;
+    line-height: 1.4;
+}
+
+.form-group label::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 6px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.form-group:focus-within label {
+    color: var(--primary-color);
+    transform: translateX(2px);
+}
+
+.form-group:focus-within label::after {
+    opacity: 1;
+}
+
+/* Required field indicators */
+.form-group select:required + label::before,
+.form-group input:required + label::before {
+    content: '*';
+    color: var(--error-color);
+    margin-right: 4px;
+}
+
+/* Enhanced select and input styling to match labels */
+.form-group select,
+.form-group input {
+    width: 100%;
+    padding: var(--space-4) var(--space-5);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-base);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--white);
+    font-family: var(--font-family);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.form-group select:focus,
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 
+        0 0 0 4px rgba(79, 70, 229, 0.1),
+        0 4px 12px rgba(79, 70, 229, 0.1);
+    transform: translateY(-2px);
+}
+
+.form-group select:hover,
+.form-group input:hover {
+    border-color: var(--gray-300);
+}
+
+/* Specific styling for the external account group */
+#externalAccountGroup {
+    background: var(--gray-50);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    margin-top: var(--space-4);
+}
+
+#externalAccountGroup label {
+    color: var(--gray-600);
+    font-weight: 500;
+}
+
+/* Balance info styling */
+#balanceInfo {
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+    padding: var(--space-2) var(--space-3);
+    background: var(--gray-50);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--primary-color);
+}
+
+#balanceInfo.insufficient {
+    color: var(--error-color);
+    background: rgba(239, 68, 68, 0.05);
+    border-left-color: var(--error-color);
+}
+
+/* IBAN validation styling */
+.iban-validation {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius);
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.iban-validation.valid {
+    background: rgba(16, 185, 129, 0.05);
+    color: var(--success-color);
+    border-left: 3px solid var(--success-color);
+}
+
+.iban-validation.invalid {
+    background: rgba(239, 68, 68, 0.05);
+    color: var(--error-color);
+    border-left: 3px solid var(--error-color);
+}
+
+/* Transfer summary enhancements */
+.transfer-summary {
+    background: var(--gray-50);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    margin: var(--space-6) 0;
+    border: 1px solid var(--gray-200);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+    color: var(--gray-600);
+}
+
+.summary-item.total {
+    border-top: 2px solid var(--gray-300);
+    padding-top: var(--space-3);
+    margin-top: var(--space-2);
+    font-weight: 700;
+    color: var(--gray-900);
+    font-size: var(--font-size-lg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .form-group {
+        margin-bottom: var(--space-4);
+    }
+    
+    .form-group label {
+        font-size: var(--font-size-xs);
+        margin-bottom: var(--space-2);
+    }
+    
+    #externalAccountGroup {
+        padding: var(--space-3);
+    }
+}
