@@ -221,7 +221,7 @@ class TransactionsManager {
     }
 
     /**
-     * Setup event listeners for filters, search, and pagination
+     * Setup event listeners for filters, search, pagination, and export
      */
     setupEventListeners() {
         console.log('🎯 Setting up transaction event listeners...');
@@ -260,6 +260,15 @@ class TransactionsManager {
         
         // Search functionality
         this.setupSearch();
+        
+        // Export CSV button
+        const exportButton = document.querySelector('.btn-secondary');
+        if (exportButton && exportButton.textContent.includes('Export CSV')) {
+            exportButton.addEventListener('click', () => {
+                this.exportToCSV();
+            });
+            console.log('✅ Export CSV button setup');
+        }
         
         console.log('✅ Transaction event listeners setup complete');
     }
@@ -460,6 +469,81 @@ class TransactionsManager {
         pageInfo.className = 'pagination-info';
         pageInfo.textContent = `Page ${this.pagination.currentPage} of ${this.pagination.totalPages} (${this.pagination.totalTransactions} transactions)`;
         paginationContainer.appendChild(pageInfo);
+    }
+
+    /**
+     * Export filtered transactions to CSV
+     */
+    exportToCSV() {
+        try {
+            if (this.filteredTransactions.length === 0) {
+                this.showExportMessage('No transactions to export', 'error');
+                return;
+            }
+
+            // Create CSV headers
+            const headers = ['Date', 'Time', 'Description', 'Recipient', 'IBAN', 'Amount', 'Type', 'Category', 'Status'];
+            
+            // Create CSV rows
+            const csvRows = this.filteredTransactions.map(transaction => {
+                const date = new Date(transaction.timestamp);
+                const formattedDate = date.toLocaleDateString('en-US');
+                const formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                
+                return [
+                    `"${formattedDate}"`,
+                    `"${formattedTime}"`,
+                    `"${transaction.description}"`,
+                    `"${transaction.recipientName || ''}"`,
+                    `"${transaction.recipientIBAN || ''}"`,
+                    `"${transaction.amount}"`,
+                    `"${transaction.type}"`,
+                    `"${transaction.category}"`,
+                    `"${transaction.status}"`
+                ].join(',');
+            });
+
+            // Combine headers and rows
+            const csvContent = [headers.join(','), ...csvRows].join('\n');
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `transactions_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.showExportMessage(`Exported ${this.filteredTransactions.length} transactions successfully!`, 'success');
+            
+            console.log('📤 CSV export completed:', this.filteredTransactions.length, 'transactions');
+            
+        } catch (error) {
+            console.error('❌ CSV export failed:', error);
+            this.showExportMessage('Export failed. Please try again.', 'error');
+        }
+    }
+
+    /**
+     * Show export success/error message
+     */
+    showExportMessage(message, type = 'info') {
+        // Use existing notification system
+        if (window.dashboardManager && typeof dashboardManager.showSuccess === 'function') {
+            if (type === 'success') {
+                dashboardManager.showSuccess(message);
+            } else {
+                dashboardManager.showError(message);
+            }
+        } else {
+            // Fallback alert
+            alert(message);
+        }
     }
 
     /**
