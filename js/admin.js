@@ -449,60 +449,81 @@ class AdminManager {
     }
 
     /**
-     * Setup add user button
+     * Setup add user button to show confirmation popup
      */
     setupAddUserButton() {
         const addUserButton = document.querySelector('.admin-header .btn-primary');
         if (addUserButton) {
             addUserButton.addEventListener('click', () => {
-                this.showAddUserModal();
+                this.showAddUserConfirmation();
             });
         }
     }
 
     /**
-     * Show add user modal
+     * Show confirmation popup for adding new user
      */
-    showAddUserModal() {
+    showAddUserConfirmation() {
         const modalHTML = `
-            <div class="modal-overlay" id="addUserModal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Add New User</h3>
-                        <button class="modal-close" onclick="adminManager.closeAddUserModal()">&times;</button>
+            <div class="modal-overlay" id="addUserModal" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            ">
+                <div class="modal-content" style="
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 12px;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                    max-width: 400px;
+                    width: 90%;
+                    text-align: center;
+                ">
+                    <div class="modal-header" style="margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--gray-900); font-size: 1.5rem;">
+                            Add New User
+                        </h3>
+                        <p style="margin: 0; color: var(--gray-600); font-size: 0.875rem;">
+                            You will be signed out and redirected to the registration page to create a new user account.
+                        </p>
                     </div>
-                    <div class="modal-body">
-                        <form id="addUserForm">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="newFirstName">First Name</label>
-                                    <input type="text" id="newFirstName" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="newLastName">Last Name</label>
-                                    <input type="text" id="newLastName" required>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="newEmail">Email Address</label>
-                                <input type="email" id="newEmail" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="newPassword">Password</label>
-                                <input type="password" id="newPassword" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="newRole">Role</label>
-                                <select id="newRole">
-                                    <option value="user">User</option>
-                                    <option value="admin">Admin</option>
-                                </select>
-                            </div>
-                            <div class="form-actions">
-                                <button type="button" class="btn btn-secondary" onclick="adminManager.closeAddUserModal()">Cancel</button>
-                                <button type="submit" class="btn btn-primary">Create User</button>
-                            </div>
-                        </form>
+                    
+                    <div class="modal-actions" style="
+                        display: flex;
+                        gap: 0.75rem;
+                        justify-content: center;
+                    ">
+                        <button class="btn btn-secondary" id="cancelAddUser" style="
+                            padding: 0.75rem 1.5rem;
+                            border: 1px solid var(--gray-300);
+                            background: white;
+                            color: var(--gray-700);
+                            border-radius: 8px;
+                            font-weight: 500;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                        ">
+                            Cancel
+                        </button>
+                        <button class="btn btn-primary" id="confirmAddUser" style="
+                            padding: 0.75rem 1.5rem;
+                            background: var(--primary-color);
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-weight: 500;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                        ">
+                            Create User
+                        </button>
                     </div>
                 </div>
             </div>
@@ -511,66 +532,73 @@ class AdminManager {
         // Add modal to page
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        // Setup form submission
-        const form = document.getElementById('addUserForm');
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.createNewUser();
+        // Setup event listeners
+        const cancelBtn = document.getElementById('cancelAddUser');
+        const confirmBtn = document.getElementById('confirmAddUser');
+        const modal = document.getElementById('addUserModal');
+
+        // Cancel button - close modal
+        cancelBtn.addEventListener('click', () => {
+            modal.remove();
+        });
+
+        // Confirm button - sign out and redirect to register
+        confirmBtn.addEventListener('click', async () => {
+            await this.createNewUserRedirect();
+        });
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        // Add hover effects
+        cancelBtn.addEventListener('mouseenter', () => {
+            cancelBtn.style.backgroundColor = 'var(--gray-50)';
+        });
+        cancelBtn.addEventListener('mouseleave', () => {
+            cancelBtn.style.backgroundColor = 'white';
+        });
+
+        confirmBtn.addEventListener('mouseenter', () => {
+            confirmBtn.style.backgroundColor = 'var(--primary-dark)';
+            confirmBtn.style.transform = 'translateY(-1px)';
+        });
+        confirmBtn.addEventListener('mouseleave', () => {
+            confirmBtn.style.backgroundColor = 'var(--primary-color)';
+            confirmBtn.style.transform = 'translateY(0)';
         });
     }
 
     /**
-     * Close add user modal
+     * Sign out and redirect to registration page
      */
-    closeAddUserModal() {
-        const modal = document.getElementById('addUserModal');
-        if (modal) {
-            modal.remove();
-        }
-    }
-
-    /**
-     * Create new user
-     */
-    async createNewUser() {
-        const firstName = document.getElementById('newFirstName').value;
-        const lastName = document.getElementById('newLastName').value;
-        const email = document.getElementById('newEmail').value;
-        const password = document.getElementById('newPassword').value;
-        const role = document.getElementById('newRole').value;
-
+    async createNewUserRedirect() {
         try {
-            // Check if user already exists
-            const existingUser = this.users.find(user => user.email === email);
-            if (existingUser) {
-                alert('A user with this email already exists.');
-                return;
+            // Close the modal first
+            const modal = document.getElementById('addUserModal');
+            if (modal) {
+                modal.remove();
             }
 
-            // Create new user using auth manager
-            const result = await authManager.register({
-                firstName: firstName,
-                lastName: lastName,
-                email: email,
-                password: password,
-                confirmPassword: password,
-                role: role
-            });
-
-            if (result.success) {
-                this.closeAddUserModal();
-                await this.loadAdminData(); // Reload data
-                await this.loadUsersTable(); // Refresh table
-                if (window.finSimApp) {
-                    finSimApp.showSuccess('User created successfully!');
-                }
-            } else {
-                alert('Failed to create user: ' + result.message);
+            // Show loading state
+            if (window.finSimApp) {
+                await finSimApp.showLoading('Redirecting to registration...');
             }
+
+            // Sign out current admin user
+            await authManager.logout();
+
+            // Redirect to registration page
+            window.location.href = '../auth/register.html';
 
         } catch (error) {
-            console.error('Error creating user:', error);
-            alert('Error creating user. Please try again.');
+            console.error('❌ Error redirecting to registration:', error);
+            if (window.finSimApp) {
+                await finSimApp.showError('Failed to redirect. Please try again.');
+            }
         }
     }
 
@@ -621,8 +649,8 @@ class AdminManager {
             pageButton.className = `pagination-btn ${i === this.currentUsersPage ? 'active' : ''}`;
             pageButton.textContent = i;
             pageButton.addEventListener('click', () => {
-                this.pagination.currentPage = i;
-                this.renderTransactions();
+                this.currentUsersPage = i;
+                this.loadUsersTable();
             });
             paginationContainer.appendChild(pageButton);
         }
