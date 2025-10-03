@@ -240,12 +240,242 @@ class AdminManager {
     }
 
     /**
+     * Initialize users page with real data
+     */
+    async initializeUsersPage() {
+        console.log('👥 Initializing users page...');
+        
+        await this.loadUsersTable();
+        this.setupUsersSearch();
+        this.setupUsersFilters();
+        this.updateUsersPagination();
+    }
+
+    /**
+     * Load real users into the table
+     */
+    async loadUsersTable() {
+        const tableBody = document.querySelector('.users-table tbody');
+        if (!tableBody) return;
+
+        tableBody.innerHTML = '';
+
+        this.users.forEach(user => {
+            const userRow = this.createUserRow(user);
+            tableBody.appendChild(userRow);
+        });
+
+        this.updateUsersPagination();
+    }
+
+    /**
+     * Create a table row for a user
+     */
+    createUserRow(user) {
+        const row = document.createElement('tr');
+        
+        const userBalance = this.calculateUserBalance(user.id);
+        const lastLogin = user.lastLogin ? this.getTimeAgo(new Date(user.lastLogin)) : 'Never';
+        
+        row.innerHTML = `
+            <td>
+                <div class="user-cell">
+                    <div class="user-avatar-small">${this.getUserInitials(user)}</div>
+                    <div class="user-info-small">
+                        <p class="user-name">${user.firstName} ${user.lastName}</p>
+                        <p class="user-id">ID: ${user.id.slice(-6)}</p>
+                    </div>
+                </div>
+            </td>
+            <td>${user.email}</td>
+            <td><span class="role-badge ${user.role}">${user.role}</span></td>
+            <td><span class="status-badge ${user.isActive ? 'active' : 'inactive'}">${user.isActive ? 'Active' : 'Inactive'}</span></td>
+            <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(userBalance)}</td>
+            <td>${lastLogin}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-icon" title="Edit" onclick="adminManager.editUser('${user.id}')">✏️</button>
+                    <button class="btn-icon" title="View" onclick="adminManager.viewUser('${user.id}')">👁️</button>
+                    <button class="btn-icon" title="Delete" onclick="adminManager.deleteUser('${user.id}')">🗑️</button>
+                </div>
+            </td>
+        `;
+
+        return row;
+    }
+
+    /**
+     * Calculate total balance for a user
+     */
+    calculateUserBalance(userId) {
+        const userAccounts = this.accounts.filter(account => account.userId === userId);
+        return userAccounts.reduce((total, account) => total + (account.balance || 0), 0);
+    }
+
+    /**
+     * Setup users search functionality
+     */
+    setupUsersSearch() {
+        const searchInput = document.querySelector('.search-box input');
+        const searchButton = document.querySelector('.search-btn');
+
+        if (searchInput && searchButton) {
+            const performSearch = () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                this.filterUsers(searchTerm);
+            };
+
+            searchInput.addEventListener('input', this.debounce(performSearch, 300));
+            searchButton.addEventListener('click', performSearch);
+        }
+    }
+
+    /**
+     * Setup users filters
+     */
+    setupUsersFilters() {
+        const filterSelects = document.querySelectorAll('.filter-group select');
+        
+        filterSelects.forEach(select => {
+            select.addEventListener('change', () => {
+                this.applyUsersFilters();
+            });
+        });
+    }
+
+    /**
+     * Filter users based on search term
+     */
+    filterUsers(searchTerm) {
+        const tableBody = document.querySelector('.users-table tbody');
+        if (!tableBody) return;
+
+        const filteredUsers = this.users.filter(user => {
+            const searchableText = `
+                ${user.firstName} ${user.lastName}
+                ${user.email}
+                ${user.role}
+                ${user.id}
+            `.toLowerCase();
+
+            return searchableText.includes(searchTerm);
+        });
+
+        this.displayFilteredUsers(filteredUsers);
+    }
+
+    /**
+     * Apply all active filters
+     */
+    applyUsersFilters() {
+        const statusFilter = document.querySelector('.filter-group select:nth-child(1)');
+        const sortFilter = document.querySelector('.filter-group select:nth-child(2)');
+        
+        let filteredUsers = [...this.users];
+
+        // Apply status filter
+        if (statusFilter && statusFilter.value !== 'All Users') {
+            filteredUsers = filteredUsers.filter(user => {
+                if (statusFilter.value === 'Active') return user.isActive;
+                if (statusFilter.value === 'Inactive') return !user.isActive;
+                if (statusFilter.value === 'Admin') return user.role === 'admin';
+                return true;
+            });
+        }
+
+        // Apply sorting
+        if (sortFilter) {
+            filteredUsers.sort((a, b) => {
+                switch (sortFilter.value) {
+                    case 'Sort by: Name':
+                        return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+                    case 'Sort by: Balance':
+                        return this.calculateUserBalance(b.id) - this.calculateUserBalance(a.id);
+                    case 'Sort by: Recent':
+                    default:
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                }
+            });
+        }
+
+        this.displayFilteredUsers(filteredUsers);
+    }
+
+    /**
+     * Display filtered users in the table
+     */
+    displayFilteredUsers(users) {
+        const tableBody = document.querySelector('.users-table tbody');
+        if (!tableBody) return;
+
+        tableBody.innerHTML = '';
+
+        if (users.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-500);">
+                        No users found matching your criteria
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        users.forEach(user => {
+            const userRow = this.createUserRow(user);
+            tableBody.appendChild(userRow);
+        });
+
+        this.updateUsersPagination(users.length);
+    }
+
+    /**
+     * Update users pagination info
+     */
+    updateUsersPagination(totalUsers = null) {
+        const paginationInfo = document.querySelector('.pagination-info');
+        const userCount = totalUsers || this.users.length;
+        
+        if (paginationInfo) {
+            paginationInfo.textContent = `Showing 1-${userCount} of ${userCount} users`;
+        }
+    }
+
+    /**
+     * User action methods (to be implemented in Phase 3)
+     */
+    editUser(userId) {
+        console.log('✏️ Edit user:', userId);
+        // Will be implemented in Phase 3
+    }
+
+    viewUser(userId) {
+        console.log('👁️ View user:', userId);
+        // Will be implemented in Phase 3
+    }
+
+    deleteUser(userId) {
+        console.log('🗑️ Delete user:', userId);
+        if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            // Will be implemented in Phase 3
+        }
+    }
+
+    /**
+     * Initialize reports page (Phase 3)
+     */
+    async initializeReportsPage() {
+        console.log('📈 Initializing reports page...');
+        // Will be implemented in Phase 3
+    }
+
+    /**
      * Utility function to get user initials
      */
     getUserInitials(user) {
         const first = user.firstName ? user.firstName[0] : '';
         const last = user.lastName ? user.lastName[0] : '';
-        return (first + last).toUpperCase() || 'AU';
+        return (first + last).toUpperCase() || 'US';
     }
 
     /**
@@ -267,11 +497,26 @@ class AdminManager {
     }
 
     /**
+     * Debounce function for search
+     */
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    /**
      * Setup admin event listeners
      */
     setupEventListeners() {
         console.log('🎯 Setting up admin event listeners...');
-        // Will be implemented in Phase 2
+        // Will be implemented in Phase 3
     }
 
     /**
@@ -291,22 +536,6 @@ class AdminManager {
     redirectToUserDashboard() {
         console.log('🔒 Redirecting non-admin user to dashboard...');
         window.location.href = '../dashboard/dashboard.html';
-    }
-
-    /**
-     * Initialize users page (Phase 2)
-     */
-    async initializeUsersPage() {
-        console.log('👥 Initializing users page...');
-        // Will be implemented in Phase 2
-    }
-
-    /**
-     * Initialize reports page (Phase 2)
-     */
-    async initializeReportsPage() {
-        console.log('📈 Initializing reports page...');
-        // Will be implemented in Phase 2
     }
 }
 
