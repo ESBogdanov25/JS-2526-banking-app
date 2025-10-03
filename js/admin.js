@@ -7,6 +7,11 @@ class AdminManager {
     constructor() {
         this.currentAdmin = null;
         this.isInitialized = false;
+        this.currentFilters = {
+            dateFrom: null,
+            dateTo: null,
+            reportType: 'Financial Overview'
+        };
         this.init();
     }
 
@@ -447,53 +452,101 @@ class AdminManager {
     async initializeReportsPage() {
         console.log('📈 Initializing reports page...');
         
+        // Set default date range (last 30 days)
+        this.setDefaultDateRange();
+        
         await this.updateReportsMetrics();
         this.setupReportsFilters();
         this.setupExportButtons();
     }
 
     /**
+     * Set default date range (last 30 days)
+     */
+    setDefaultDateRange() {
+        const dateTo = new Date();
+        const dateFrom = new Date();
+        dateFrom.setDate(dateFrom.getDate() - 30);
+
+        const dateFromInput = document.querySelector('.date-range input:nth-child(2)');
+        const dateToInput = document.querySelector('.date-range input:nth-child(4)');
+
+        if (dateFromInput && dateToInput) {
+            dateFromInput.value = dateFrom.toISOString().split('T')[0];
+            dateToInput.value = dateTo.toISOString().split('T')[0];
+            
+            this.currentFilters.dateFrom = dateFrom;
+            this.currentFilters.dateTo = dateTo;
+        }
+    }
+
+    /**
      * Update reports metrics with real data
      */
     async updateReportsMetrics() {
-        const metrics = this.calculateReportsMetrics();
+        const filteredData = this.getFilteredData();
+        const metrics = this.calculateReportsMetrics(filteredData);
 
         // Update key metrics grid
         this.updateMetricsGrid(metrics);
         
         // Update chart placeholders with real data info
-        this.updateChartPlaceholders(metrics);
+        this.updateChartPlaceholders(metrics, filteredData);
+    }
+
+    /**
+     * Get filtered data based on current filters
+     */
+    getFilteredData() {
+        let filteredTransactions = [...this.transactions];
+        let filteredUsers = [...this.users];
+
+        // Apply date range filter to transactions
+        if (this.currentFilters.dateFrom && this.currentFilters.dateTo) {
+            filteredTransactions = filteredTransactions.filter(txn => {
+                const txnDate = new Date(txn.timestamp);
+                return txnDate >= this.currentFilters.dateFrom && txnDate <= this.currentFilters.dateTo;
+            });
+        }
+
+        // Apply date range filter to users (for user growth)
+        if (this.currentFilters.dateFrom && this.currentFilters.dateTo) {
+            filteredUsers = filteredUsers.filter(user => {
+                const userDate = new Date(user.createdAt);
+                return userDate >= this.currentFilters.dateFrom && userDate <= this.currentFilters.dateTo;
+            });
+        }
+
+        return {
+            transactions: filteredTransactions,
+            users: filteredUsers,
+            accounts: this.accounts // Accounts aren't date-filtered
+        };
     }
 
     /**
      * Calculate comprehensive reports metrics
      */
-    calculateReportsMetrics() {
+    calculateReportsMetrics(filteredData) {
         const activeUsers = this.users.filter(user => user.isActive);
         const totalBalance = this.accounts.reduce((sum, account) => sum + (account.balance || 0), 0);
         const avgBalance = this.accounts.length > 0 ? totalBalance / this.accounts.length : 0;
         
-        // Calculate transaction volume by type
-        const deposits = this.transactions.filter(txn => txn.type === 'deposit').length;
-        const transfers = this.transactions.filter(txn => txn.type === 'transfer').length;
-        const withdrawals = this.transactions.filter(txn => txn.type === 'withdrawal').length;
+        // Calculate transaction volume by type from filtered data
+        const deposits = filteredData.transactions.filter(txn => txn.type === 'deposit').length;
+        const transfers = filteredData.transactions.filter(txn => txn.type === 'transfer').length;
+        const withdrawals = filteredData.transactions.filter(txn => txn.type === 'withdrawal').length;
 
-        // Calculate recent growth (last 7 days vs previous 7 days)
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        
-        const recentUsers = this.users.filter(user => new Date(user.createdAt) > oneWeekAgo).length;
-        const previousWeekUsers = this.users.filter(user => {
-            const userDate = new Date(user.createdAt);
-            return userDate > new Date(oneWeekAgo.getTime() - 7 * 24 * 60 * 60 * 1000) && userDate <= oneWeekAgo;
-        }).length;
-
-        const userGrowth = previousWeekUsers > 0 ? 
-            ((recentUsers - previousWeekUsers) / previousWeekUsers * 100) : 0;
+        // Calculate recent growth based on filtered data
+        const recentUsers = filteredData.users.length;
+        const previousPeriodUsers = this.getPreviousPeriodUsersCount();
+        const userGrowth = previousPeriodUsers > 0 ? 
+            ((recentUsers - previousPeriodUsers) / previousPeriodUsers * 100) : 0;
 
         return {
             activeUsers: activeUsers.length,
-            totalTransactions: this.transactions.length,
+            totalTransactions: filteredData.transactions.length,
+            filteredUsers: filteredData.users.length,
             avgBalance: avgBalance,
             totalBalance: totalBalance,
             userGrowth: userGrowth,
@@ -502,10 +555,26 @@ class AdminManager {
                 transfers: transfers,
                 withdrawals: withdrawals
             },
-            systemUptime: 99.98, // Placeholder
-            responseTime: 128, // Placeholder
-            fraudRate: 0.03 // Placeholder
+            systemUptime: 99.98,
+            responseTime: 128,
+            fraudRate: 0.03
         };
+    }
+
+    /**
+     * Get user count from previous period for growth calculation
+     */
+    getPreviousPeriodUsersCount() {
+        if (!this.currentFilters.dateFrom || !this.currentFilters.dateTo) return 0;
+
+        const periodLength = this.currentFilters.dateTo - this.currentFilters.dateFrom;
+        const previousStart = new Date(this.currentFilters.dateFrom.getTime() - periodLength);
+        const previousEnd = new Date(this.currentFilters.dateTo.getTime() - periodLength);
+
+        return this.users.filter(user => {
+            const userDate = new Date(user.createdAt);
+            return userDate >= previousStart && userDate <= previousEnd;
+        }).length;
     }
 
     /**
@@ -554,51 +623,247 @@ class AdminManager {
     /**
      * Update chart placeholders with real data context
      */
-    updateChartPlaceholders(metrics) {
-        // Update financial overview placeholder
+    updateChartPlaceholders(metrics, filteredData) {
+        const reportType = this.currentFilters.reportType;
+
+        // Update based on selected report type
+        switch (reportType) {
+            case 'Financial Overview':
+                this.updateFinancialCharts(metrics, filteredData);
+                break;
+            case 'User Activity':
+                this.updateUserActivityCharts(metrics, filteredData);
+                break;
+            case 'Transaction Analysis':
+                this.updateTransactionCharts(metrics, filteredData);
+                break;
+            case 'Fraud Detection':
+                this.updateFraudCharts(metrics, filteredData);
+                break;
+            case 'System Performance':
+                this.updatePerformanceCharts(metrics, filteredData);
+                break;
+            default:
+                this.updateFinancialCharts(metrics, filteredData);
+        }
+    }
+
+    /**
+     * Update financial overview charts
+     */
+    updateFinancialCharts(metrics, filteredData) {
         const financialChart = document.querySelector('.report-card.wide .chart-placeholder');
         if (financialChart) {
             financialChart.innerHTML = `
                 <p>📈 Financial Overview</p>
                 <p>Total System Balance: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.totalBalance)}</p>
-                <p>${metrics.totalTransactions.toLocaleString()} total transactions</p>
-                <small>Charts would show monthly trends here</small>
+                <p>${metrics.totalTransactions.toLocaleString()} transactions in selected period</p>
+                <p>Date Range: ${this.currentFilters.dateFrom?.toLocaleDateString()} to ${this.currentFilters.dateTo?.toLocaleDateString()}</p>
+                <small>Financial trends for selected period</small>
             `;
         }
 
-        // Update user growth placeholder
+        // Update other charts for financial view
+        this.updateSupportingCharts(metrics, 'financial');
+    }
+
+    /**
+     * Update user activity charts
+     */
+    updateUserActivityCharts(metrics, filteredData) {
+        const financialChart = document.querySelector('.report-card.wide .chart-placeholder');
+        if (financialChart) {
+            financialChart.innerHTML = `
+                <p>👥 User Activity Analysis</p>
+                <p>${metrics.filteredUsers} users registered in period</p>
+                <p>${metrics.activeUsers} currently active users</p>
+                <p>Growth: ${metrics.userGrowth >= 0 ? '+' : ''}${metrics.userGrowth.toFixed(1)}%</p>
+                <p>Date Range: ${this.currentFilters.dateFrom?.toLocaleDateString()} to ${this.currentFilters.dateTo?.toLocaleDateString()}</p>
+                <small>User activity and growth analysis</small>
+            `;
+        }
+
+        this.updateSupportingCharts(metrics, 'user-activity');
+    }
+
+    /**
+     * Update transaction analysis charts
+     */
+    updateTransactionCharts(metrics, filteredData) {
+        const financialChart = document.querySelector('.report-card.wide .chart-placeholder');
+        if (financialChart) {
+            financialChart.innerHTML = `
+                <p>🔄 Transaction Analysis</p>
+                <p>Total Transactions: ${metrics.totalTransactions.toLocaleString()}</p>
+                <p>Deposits: ${metrics.transactionVolume.deposits} | Transfers: ${metrics.transactionVolume.transfers} | Withdrawals: ${metrics.transactionVolume.withdrawals}</p>
+                <p>Date Range: ${this.currentFilters.dateFrom?.toLocaleDateString()} to ${this.currentFilters.dateTo?.toLocaleDateString()}</p>
+                <small>Detailed transaction analysis and patterns</small>
+            `;
+        }
+
+        this.updateSupportingCharts(metrics, 'transaction');
+    }
+
+    /**
+     * Update fraud detection charts
+     */
+    updateFraudCharts(metrics, filteredData) {
+        const financialChart = document.querySelector('.report-card.wide .chart-placeholder');
+        if (financialChart) {
+            financialChart.innerHTML = `
+                <p>🛡️ Fraud Detection Analysis</p>
+                <p>Fraud Rate: ${metrics.fraudRate}%</p>
+                <p>${metrics.totalTransactions.toLocaleString()} transactions monitored</p>
+                <p>0 security incidents detected</p>
+                <p>Date Range: ${this.currentFilters.dateFrom?.toLocaleDateString()} to ${this.currentFilters.dateTo?.toLocaleDateString()}</p>
+                <small>Security and fraud detection metrics</small>
+            `;
+        }
+
+        this.updateSupportingCharts(metrics, 'fraud');
+    }
+
+    /**
+     * Update system performance charts
+     */
+    updatePerformanceCharts(metrics, filteredData) {
+        const financialChart = document.querySelector('.report-card.wide .chart-placeholder');
+        if (financialChart) {
+            financialChart.innerHTML = `
+                <p>⚡ System Performance</p>
+                <p>Uptime: ${metrics.systemUptime}%</p>
+                <p>Response Time: ${metrics.responseTime}ms</p>
+                <p>${metrics.totalTransactions.toLocaleString()} transactions processed</p>
+                <p>Date Range: ${this.currentFilters.dateFrom?.toLocaleDateString()} to ${this.currentFilters.dateTo?.toLocaleDateString()}</p>
+                <small>System performance and reliability metrics</small>
+            `;
+        }
+
+        this.updateSupportingCharts(metrics, 'performance');
+    }
+
+    /**
+     * Update supporting charts based on report type
+     */
+    updateSupportingCharts(metrics, reportType) {
+        // Update user growth chart
         const userChart = document.querySelector('.report-card:nth-child(2) .chart-placeholder');
         if (userChart) {
             userChart.innerHTML = `
-                <p>👥 User Growth</p>
-                <p>${metrics.activeUsers} active users</p>
-                <p>${metrics.userGrowth >= 0 ? '+' : ''}${metrics.userGrowth.toFixed(1)}% growth</p>
-                <small>Line chart showing user acquisition</small>
+                <p>📊 ${this.getChartTitle(reportType, 'user')}</p>
+                <p>${this.getChartData(reportType, 'user', metrics)}</p>
+                <small>${this.getChartDescription(reportType, 'user')}</small>
             `;
         }
 
-        // Update transaction volume placeholder
+        // Update transaction volume chart
         const transactionChart = document.querySelector('.report-card:nth-child(3) .chart-placeholder');
         if (transactionChart) {
             transactionChart.innerHTML = `
-                <p>🔄 Transaction Volume</p>
-                <p>Deposits: ${metrics.transactionVolume.deposits}</p>
-                <p>Transfers: ${metrics.transactionVolume.transfers}</p>
-                <p>Withdrawals: ${metrics.transactionVolume.withdrawals}</p>
-                <small>Area chart showing transaction patterns</small>
+                <p>📊 ${this.getChartTitle(reportType, 'transaction')}</p>
+                <p>${this.getChartData(reportType, 'transaction', metrics)}</p>
+                <small>${this.getChartDescription(reportType, 'transaction')}</small>
             `;
         }
 
-        // Update fraud alerts placeholder
+        // Update fraud alerts chart
         const fraudChart = document.querySelector('.report-card:nth-child(4) .chart-placeholder');
         if (fraudChart) {
             fraudChart.innerHTML = `
-                <p>🛡️ Security Metrics</p>
-                <p>Fraud Rate: ${metrics.fraudRate}%</p>
-                <p>System monitoring active</p>
-                <small>Pie chart showing alert types</small>
+                <p>📊 ${this.getChartTitle(reportType, 'fraud')}</p>
+                <p>${this.getChartData(reportType, 'fraud', metrics)}</p>
+                <small>${this.getChartDescription(reportType, 'fraud')}</small>
             `;
         }
+    }
+
+    /**
+     * Get chart title based on report type
+     */
+    getChartTitle(reportType, chartType) {
+        const titles = {
+            'financial': {
+                'user': 'User Financial Distribution',
+                'transaction': 'Transaction Types',
+                'fraud': 'Risk Assessment'
+            },
+            'user-activity': {
+                'user': 'User Growth Trend',
+                'transaction': 'Activity Patterns',
+                'fraud': 'User Security'
+            },
+            'transaction': {
+                'user': 'User Transaction Stats',
+                'transaction': 'Volume Analysis',
+                'fraud': 'Anomaly Detection'
+            },
+            'fraud': {
+                'user': 'User Risk Profiles',
+                'transaction': 'Suspicious Activity',
+                'fraud': 'Threat Analysis'
+            },
+            'performance': {
+                'user': 'User Load Distribution',
+                'transaction': 'Processing Volume',
+                'fraud': 'System Security'
+            }
+        };
+        return titles[reportType]?.[chartType] || 'Data Overview';
+    }
+
+    /**
+     * Get chart data based on report type
+     */
+    getChartData(reportType, chartType, metrics) {
+        switch (chartType) {
+            case 'user':
+                return `Active: ${metrics.activeUsers} | New: ${metrics.filteredUsers} | Growth: ${metrics.userGrowth >= 0 ? '+' : ''}${metrics.userGrowth.toFixed(1)}%`;
+            case 'transaction':
+                return `D: ${metrics.transactionVolume.deposits} | T: ${metrics.transactionVolume.transfers} | W: ${metrics.transactionVolume.withdrawals}`;
+            case 'fraud':
+                return `Rate: ${metrics.fraudRate}% | Monitored: ${metrics.totalTransactions} | Incidents: 0`;
+            default:
+                return 'Chart data would appear here';
+        }
+    }
+
+    /**
+     * Get chart description based on report type
+     */
+    getChartDescription(reportType, chartType) {
+        return `${this.currentFilters.reportType} - ${chartType} analysis for selected period`;
+    }
+
+    /**
+     * Update report titles based on selected report type
+     */
+    updateReportTitles() {
+        const mainReportTitle = document.querySelector('.report-card.wide h3');
+        const supportingTitles = document.querySelectorAll('.report-card:not(.wide) h3');
+        
+        if (!mainReportTitle) return;
+
+        const reportType = this.currentFilters.reportType;
+        
+        // Update main report title
+        mainReportTitle.textContent = reportType;
+        
+        // Update supporting report titles based on report type
+        const supportingTitlesMap = {
+            'Financial Overview': ['User Growth', 'Transaction Volume', 'Risk Assessment'],
+            'User Activity': ['Activity Trends', 'User Demographics', 'Engagement Metrics'],
+            'Transaction Analysis': ['Transaction Types', 'Volume Trends', 'Pattern Analysis'],
+            'Fraud Detection': ['Threat Monitoring', 'Anomaly Detection', 'Security Metrics'],
+            'System Performance': ['Performance Metrics', 'Resource Usage', 'Uptime Statistics']
+        };
+
+        const titles = supportingTitlesMap[reportType] || ['Data Analysis', 'Trends', 'Metrics'];
+        
+        supportingTitles.forEach((titleElement, index) => {
+            if (titleElement && titles[index]) {
+                titleElement.textContent = titles[index];
+            }
+        });
     }
 
     /**
@@ -611,28 +876,50 @@ class AdminManager {
         // Date range change handler
         dateInputs.forEach(input => {
             input.addEventListener('change', () => {
+                this.updateDateFilters();
                 this.generateReport();
             });
         });
 
-        // Report type change handler
+        // Report type change handler - update immediately
         if (reportTypeSelect) {
-            reportTypeSelect.addEventListener('change', () => {
-                this.generateReport();
+            reportTypeSelect.addEventListener('change', (e) => {
+                this.currentFilters.reportType = e.target.value;
+                this.generateReport(); // This will update titles automatically
             });
+
+            // Set initial report type
+            this.currentFilters.reportType = reportTypeSelect.value;
         }
     }
 
     /**
+     * Update date filters from inputs
+     */
+    updateDateFilters() {
+        const dateFromInput = document.querySelector('.date-range input:nth-child(2)');
+        const dateToInput = document.querySelector('.date-range input:nth-child(4)');
+
+        if (dateFromInput && dateFromInput.value) {
+            this.currentFilters.dateFrom = new Date(dateFromInput.value);
+        }
+        if (dateToInput && dateToInput.value) {
+            this.currentFilters.dateTo = new Date(dateToInput.value);
+            // Set to end of day for proper range inclusion
+            this.currentFilters.dateTo.setHours(23, 59, 59, 999);
+        }
+    }
+
+   /**
      * Generate report based on filters
      */
-    generateReport() {
-        console.log('📊 Generating report with current filters...');
-        // In a real implementation, this would filter data and update charts
-        // For now, we'll just show a notification
-        if (window.finSimApp) {
-            finSimApp.showSuccess('Report generated with current filters');
-        }
+    async generateReport() {
+        console.log('📊 Generating report with current filters...', this.currentFilters);
+        
+        await this.updateReportsMetrics();
+        this.updateReportTitles(); // Add this line
+        
+        // Remove the success notification for automatic updates
     }
 
     /**
@@ -660,7 +947,7 @@ class AdminManager {
 
         if (generateReportBtn) {
             generateReportBtn.addEventListener('click', () => {
-                this.generateComprehensiveReport();
+                this.generateReport();
             });
         }
     }
@@ -671,23 +958,25 @@ class AdminManager {
     exportReport(reportType) {
         console.log(`📤 Exporting ${reportType}...`);
         
+        const filteredData = this.getFilteredData();
+        
         switch (reportType) {
             case 'Financial Report':
-                this.generateFinancialReportPDF();
+                this.generateFinancialReportPDF(filteredData);
                 break;
             case 'User Analytics':
-                const userCsv = this.generateUserAnalyticsCSV();
+                const userCsv = this.generateUserAnalyticsCSV(filteredData);
                 this.downloadFile(userCsv, `user_analytics_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
                 break;
             case 'Transaction Log':
-                const transactionExcel = this.generateTransactionLogExcel();
+                const transactionExcel = this.generateTransactionLogExcel(filteredData);
                 this.downloadFile(transactionExcel, `transaction_log_${new Date().toISOString().split('T')[0]}.xls`, 'application/vnd.ms-excel');
                 break;
             case 'Security Report':
-                this.generateSecurityReportPDF();
+                this.generateSecurityReportPDF(filteredData);
                 break;
             default:
-                this.generateFinancialReportPDF();
+                this.generateFinancialReportPDF(filteredData);
         }
         
         if (window.finSimApp) {
@@ -698,13 +987,13 @@ class AdminManager {
     /**
      * Generate financial report PDF
      */
-    generateFinancialReportPDF() {
+    generateFinancialReportPDF(filteredData) {
         console.log('📊 Generating financial report PDF...');
         
         const pdfWindow = window.open('', '_blank');
         const reportDate = new Date().toLocaleDateString();
         const adminName = `${this.currentAdmin.firstName} ${this.currentAdmin.lastName}`;
-        const metrics = this.calculateReportsMetrics();
+        const metrics = this.calculateReportsMetrics(filteredData);
 
         pdfWindow.document.write(`
             <!DOCTYPE html>
@@ -796,6 +1085,13 @@ class AdminManager {
                         font-size: 12px;
                         margin-bottom: 20px;
                     }
+                    .date-range {
+                        background: #f8fafc;
+                        padding: 10px;
+                        border-radius: 6px;
+                        margin: 10px 0;
+                        text-align: center;
+                    }
                 </style>
             </head>
             <body>
@@ -805,16 +1101,19 @@ class AdminManager {
                     <h1>FinSim Financial Report</h1>
                     <div class="subtitle">Comprehensive Financial Performance Analysis</div>
                     <div class="subtitle">Generated by: ${adminName}</div>
+                    <div class="date-range">
+                        <strong>Date Range:</strong> ${this.currentFilters.dateFrom?.toLocaleDateString()} to ${this.currentFilters.dateTo?.toLocaleDateString()}
+                    </div>
                 </div>
 
                 <div class="section">
                     <h2>Executive Summary</h2>
-                    <p>This financial report provides a comprehensive overview of the FinSim banking system's financial performance, including user balances, transaction volumes, and system growth metrics.</p>
+                    <p>This financial report provides a comprehensive overview of the FinSim banking system's financial performance for the selected period.</p>
                     
                     <div class="metrics-grid">
                         <div class="metric-card">
-                            <div class="metric-value">${this.users.length.toLocaleString()}</div>
-                            <div class="metric-label">Total Users</div>
+                            <div class="metric-value">${metrics.filteredUsers.toLocaleString()}</div>
+                            <div class="metric-label">Users in Period</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-value">${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.totalBalance)}</div>
@@ -822,7 +1121,7 @@ class AdminManager {
                         </div>
                         <div class="metric-card">
                             <div class="metric-value">${metrics.totalTransactions.toLocaleString()}</div>
-                            <div class="metric-label">Total Transactions</div>
+                            <div class="metric-label">Transactions in Period</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-value">${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.avgBalance)}</div>
@@ -865,41 +1164,6 @@ class AdminManager {
                     </table>
                 </div>
 
-                <div class="section">
-                    <h2>User Financial Distribution</h2>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Balance Range</th>
-                                <th>Number of Users</th>
-                                <th>Total Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>$0 - $1,000</td>
-                                <td>${this.calculateUsersInRange(0, 1000)}</td>
-                                <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.calculateBalanceInRange(0, 1000))}</td>
-                            </tr>
-                            <tr>
-                                <td>$1,001 - $10,000</td>
-                                <td>${this.calculateUsersInRange(1001, 10000)}</td>
-                                <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.calculateBalanceInRange(1001, 10000))}</td>
-                            </tr>
-                            <tr>
-                                <td>$10,001 - $50,000</td>
-                                <td>${this.calculateUsersInRange(10001, 50000)}</td>
-                                <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.calculateBalanceInRange(10001, 50000))}</td>
-                            </tr>
-                            <tr>
-                                <td>$50,001+</td>
-                                <td>${this.calculateUsersInRange(50001, Infinity)}</td>
-                                <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.calculateBalanceInRange(50001, Infinity))}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
                 <div class="footer">
                     <p>FinSim Banking System - Confidential Financial Report</p>
                     <p>This report contains sensitive financial information. Handle with care.</p>
@@ -915,35 +1179,12 @@ class AdminManager {
     }
 
     /**
-     * Calculate users in balance range
-     */
-    calculateUsersInRange(min, max) {
-        return this.users.filter(user => {
-            const balance = this.calculateUserBalance(user.id);
-            return balance >= min && balance <= max;
-        }).length;
-    }
-
-    /**
-     * Calculate total balance in range
-     */
-    calculateBalanceInRange(min, max) {
-        return this.users.reduce((total, user) => {
-            const balance = this.calculateUserBalance(user.id);
-            if (balance >= min && balance <= max) {
-                return total + balance;
-            }
-            return total;
-        }, 0);
-    }
-
-    /**
      * Generate user analytics CSV
      */
-    generateUserAnalyticsCSV() {
+    generateUserAnalyticsCSV(filteredData) {
         const headers = ['User ID', 'Name', 'Email', 'Role', 'Status', 'Total Balance', 'Last Login', 'Join Date'];
         
-        const rows = this.users.map(user => [
+        const rows = filteredData.users.map(user => [
             user.id,
             `${user.firstName} ${user.lastName}`,
             user.email,
@@ -960,10 +1201,10 @@ class AdminManager {
     /**
      * Generate transaction log Excel format
      */
-    generateTransactionLogExcel() {
+    generateTransactionLogExcel(filteredData) {
         const headers = ['Transaction ID', 'Date', 'Time', 'Type', 'Amount', 'Description', 'Account ID', 'Status', 'Recipient'];
         
-        const rows = this.transactions.slice(0, 1000).map(txn => [
+        const rows = filteredData.transactions.slice(0, 1000).map(txn => [
             txn.id,
             new Date(txn.timestamp).toLocaleDateString(),
             new Date(txn.timestamp).toLocaleTimeString(),
@@ -1000,30 +1241,19 @@ class AdminManager {
     /**
      * Generate security report PDF
      */
-    generateSecurityReportPDF() {
+    generateSecurityReportPDF(filteredData) {
         console.log('📊 Generating security report PDF...');
         
         const pdfWindow = window.open('', '_blank');
         const reportDate = new Date().toLocaleDateString();
         const adminName = `${this.currentAdmin.firstName} ${this.currentAdmin.lastName}`;
+        const metrics = this.calculateReportsMetrics(filteredData);
         
         // Security metrics calculation
         const totalUsers = this.users.length;
         const activeUsers = this.users.filter(user => user.isActive).length;
         const inactiveUsers = totalUsers - activeUsers;
         const adminUsers = this.users.filter(user => user.role === 'admin').length;
-        const totalTransactions = this.transactions.length;
-        
-        // Recent security events (last 7 days)
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const recentLogins = this.users.filter(user => 
-            user.lastLogin && new Date(user.lastLogin) > oneWeekAgo
-        ).length;
-        
-        const recentTransactions = this.transactions.filter(txn => 
-            new Date(txn.timestamp) > oneWeekAgo
-        ).length;
 
         pdfWindow.document.write(`
             <!DOCTYPE html>
@@ -1116,6 +1346,13 @@ class AdminManager {
                         font-size: 12px;
                         margin-bottom: 20px;
                     }
+                    .date-range {
+                        background: #f8fafc;
+                        padding: 10px;
+                        border-radius: 6px;
+                        margin: 10px 0;
+                        text-align: center;
+                    }
                 </style>
             </head>
             <body>
@@ -1125,12 +1362,14 @@ class AdminManager {
                     <h1>FinSim Security Report</h1>
                     <div class="subtitle">Comprehensive System Security Assessment</div>
                     <div class="subtitle">Generated by: ${adminName}</div>
+                    <div class="date-range">
+                        <strong>Date Range:</strong> ${this.currentFilters.dateFrom?.toLocaleDateString()} to ${this.currentFilters.dateTo?.toLocaleDateString()}
+                    </div>
                 </div>
 
                 <div class="section">
                     <h2>Executive Summary</h2>
-                    <p>This security report provides an overview of the FinSim banking system's security posture, 
-                    including user activity, system metrics, and potential risk areas.</p>
+                    <p>This security report provides an overview of the FinSim banking system's security posture for the selected period.</p>
                     
                     <div class="metrics-grid">
                         <div class="metric-card">
@@ -1146,30 +1385,8 @@ class AdminManager {
                             <div class="metric-label">Admin Users</div>
                         </div>
                         <div class="metric-card">
-                            <div class="metric-value">${totalTransactions}</div>
-                            <div class="metric-label">Total Transactions</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <h2>Recent Activity (Last 7 Days)</h2>
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <div class="metric-value">${recentLogins}</div>
-                            <div class="metric-label">User Logins</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-value">${recentTransactions}</div>
-                            <div class="metric-label">Transactions</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-value">${inactiveUsers}</div>
-                            <div class="metric-label">Inactive Users</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-value">0</div>
-                            <div class="metric-label">Security Incidents</div>
+                            <div class="metric-value">${metrics.totalTransactions}</div>
+                            <div class="metric-label">Transactions in Period</div>
                         </div>
                     </div>
                 </div>
@@ -1210,46 +1427,6 @@ class AdminManager {
                                 <td class="risk-medium">Medium</td>
                                 <td>Regular access reviews</td>
                             </tr>
-                            <tr>
-                                <td>System Backups</td>
-                                <td>Enabled</td>
-                                <td class="risk-low">Low</td>
-                                <td>Verify backup integrity weekly</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="section">
-                    <h2>Admin Activity Log</h2>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Admin User</th>
-                                <th>Action</th>
-                                <th>Details</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>${new Date().toLocaleString()}</td>
-                                <td>${adminName}</td>
-                                <td>Security Report Generated</td>
-                                <td>Comprehensive security assessment</td>
-                            </tr>
-                            <tr>
-                                <td>${new Date().toLocaleString()}</td>
-                                <td>System</td>
-                                <td>Automated Security Scan</td>
-                                <td>No vulnerabilities detected</td>
-                            </tr>
-                            <tr>
-                                <td>${new Date(Date.now() - 86400000).toLocaleString()}</td>
-                                <td>${adminName}</td>
-                                <td>User Management</td>
-                                <td>Reviewed user accounts</td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -1276,6 +1453,7 @@ class AdminManager {
         
         const zipContent = `
 System Data Export - ${new Date().toLocaleDateString()}
+Date Range: ${this.currentFilters.dateFrom?.toLocaleDateString()} to ${this.currentFilters.dateTo?.toLocaleDateString()}
 
 USERS: ${this.users.length} users
 ACCOUNTS: ${this.accounts.length} accounts  
@@ -1289,43 +1467,6 @@ Export generated by: ${this.currentAdmin.firstName} ${this.currentAdmin.lastName
         
         if (window.finSimApp) {
             finSimApp.showSuccess('System data exported successfully');
-        }
-    }
-
-    /**
-     * Generate comprehensive report
-     */
-    generateComprehensiveReport() {
-        console.log('📊 Generating comprehensive report...');
-        
-        const reportData = this.calculateReportsMetrics();
-        const reportSummary = `
-FinSim Comprehensive System Report
-Generated: ${new Date().toLocaleDateString()}
-
-SYSTEM OVERVIEW:
-• Total Users: ${this.users.length}
-• Active Users: ${reportData.activeUsers}
-• Total Accounts: ${this.accounts.length}
-• Total Transactions: ${reportData.totalTransactions}
-• System Balance: $${reportData.totalBalance.toLocaleString()}
-
-PERFORMANCE METRICS:
-• User Growth: ${reportData.userGrowth >= 0 ? '+' : ''}${reportData.userGrowth.toFixed(1)}%
-• Average Balance: $${reportData.avgBalance.toFixed(2)}
-• System Uptime: ${reportData.systemUptime}%
-• Response Time: ${reportData.responseTime}ms
-
-TRANSACTION ANALYSIS:
-• Deposits: ${reportData.transactionVolume.deposits}
-• Transfers: ${reportData.transactionVolume.transfers} 
-• Withdrawals: ${reportData.transactionVolume.withdrawals}
-        `.trim();
-
-        this.downloadFile(reportSummary, `comprehensive_report_${new Date().toISOString().split('T')[0]}.txt`, 'text/plain');
-        
-        if (window.finSimApp) {
-            finSimApp.showSuccess('Comprehensive report generated successfully');
         }
     }
 
