@@ -12,6 +12,15 @@ class AdminManager {
             dateTo: null,
             reportType: 'Financial Overview'
         };
+        // User management properties
+        this.currentUsersPage = 1;
+        this.usersPageSize = 10;
+        this.currentUsersSearch = '';
+        this.currentUsersFilters = {
+            status: 'All Users',
+            sortBy: 'Sort by: Recent'
+        };
+        this.filteredUsers = [];
         this.init();
     }
 
@@ -250,27 +259,104 @@ class AdminManager {
     async initializeUsersPage() {
         console.log('👥 Initializing users page...');
         
+        this.currentUsersPage = 1;
+        this.usersPageSize = 10;
+        this.currentUsersSearch = '';
+        this.currentUsersFilters = {
+            status: 'All Users',
+            sortBy: 'Sort by: Recent'
+        };
+        
         await this.loadUsersTable();
         this.setupUsersSearch();
         this.setupUsersFilters();
+        this.setupAddUserButton();
         this.updateUsersPagination();
     }
 
     /**
-     * Load real users into the table
+     * Load real users into the table with pagination
      */
     async loadUsersTable() {
         const tableBody = document.querySelector('.users-table tbody');
         if (!tableBody) return;
 
+        // Apply search and filters
+        this.applyUsersFiltersAndSearch();
+        
+        // Calculate pagination
+        const startIndex = (this.currentUsersPage - 1) * this.usersPageSize;
+        const endIndex = startIndex + this.usersPageSize;
+        const usersToShow = this.filteredUsers.slice(startIndex, endIndex);
+
         tableBody.innerHTML = '';
 
-        this.users.forEach(user => {
+        if (usersToShow.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-500);">
+                        ${this.filteredUsers.length === 0 ? 'No users found matching your criteria' : 'No users on this page'}
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        usersToShow.forEach(user => {
             const userRow = this.createUserRow(user);
             tableBody.appendChild(userRow);
         });
 
         this.updateUsersPagination();
+    }
+
+    /**
+     * Apply search and filters to users
+     */
+    applyUsersFiltersAndSearch() {
+        let filteredUsers = [...this.users];
+
+        // Apply search
+        if (this.currentUsersSearch) {
+            const searchTerm = this.currentUsersSearch.toLowerCase();
+            filteredUsers = filteredUsers.filter(user => {
+                const searchableText = `
+                    ${user.firstName} ${user.lastName}
+                    ${user.email}
+                    ${user.role}
+                    ${user.id}
+                `.toLowerCase();
+
+                return searchableText.includes(searchTerm);
+            });
+        }
+
+        // Apply status filter
+        if (this.currentUsersFilters.status !== 'All Users') {
+            filteredUsers = filteredUsers.filter(user => {
+                if (this.currentUsersFilters.status === 'Active') return user.isActive;
+                if (this.currentUsersFilters.status === 'Inactive') return !user.isActive;
+                if (this.currentUsersFilters.status === 'Admin') return user.role === 'admin';
+                return true;
+            });
+        }
+
+        // Apply sorting
+        if (this.currentUsersFilters.sortBy) {
+            filteredUsers.sort((a, b) => {
+                switch (this.currentUsersFilters.sortBy) {
+                    case 'Sort by: Name':
+                        return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+                    case 'Sort by: Balance':
+                        return this.calculateUserBalance(b.id) - this.calculateUserBalance(a.id);
+                    case 'Sort by: Recent':
+                    default:
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                }
+            });
+        }
+
+        this.filteredUsers = filteredUsers;
     }
 
     /**
@@ -326,8 +412,9 @@ class AdminManager {
 
         if (searchInput && searchButton) {
             const performSearch = () => {
-                const searchTerm = searchInput.value.toLowerCase();
-                this.filterUsers(searchTerm);
+                this.currentUsersSearch = searchInput.value.toLowerCase();
+                this.currentUsersPage = 1; // Reset to first page when searching
+                this.loadUsersTable();
             };
 
             searchInput.addEventListener('input', this.debounce(performSearch, 300));
@@ -339,111 +426,219 @@ class AdminManager {
      * Setup users filters
      */
     setupUsersFilters() {
-        const filterSelects = document.querySelectorAll('.filter-group select');
-        
-        filterSelects.forEach(select => {
-            select.addEventListener('change', () => {
-                this.applyUsersFilters();
-            });
-        });
-    }
-
-    /**
-     * Filter users based on search term
-     */
-    filterUsers(searchTerm) {
-        const tableBody = document.querySelector('.users-table tbody');
-        if (!tableBody) return;
-
-        const filteredUsers = this.users.filter(user => {
-            const searchableText = `
-                ${user.firstName} ${user.lastName}
-                ${user.email}
-                ${user.role}
-                ${user.id}
-            `.toLowerCase();
-
-            return searchableText.includes(searchTerm);
-        });
-
-        this.displayFilteredUsers(filteredUsers);
-    }
-
-    /**
-     * Apply all active filters
-     */
-    applyUsersFilters() {
         const statusFilter = document.querySelector('.filter-group select:nth-child(1)');
         const sortFilter = document.querySelector('.filter-group select:nth-child(2)');
-        
-        let filteredUsers = [...this.users];
 
-        // Apply status filter
-        if (statusFilter && statusFilter.value !== 'All Users') {
-            filteredUsers = filteredUsers.filter(user => {
-                if (statusFilter.value === 'Active') return user.isActive;
-                if (statusFilter.value === 'Inactive') return !user.isActive;
-                if (statusFilter.value === 'Admin') return user.role === 'admin';
-                return true;
+        // Status filter
+        if (statusFilter) {
+            statusFilter.addEventListener('change', (e) => {
+                this.currentUsersFilters.status = e.target.value;
+                this.currentUsersPage = 1; // Reset to first page when filtering
+                this.loadUsersTable();
             });
         }
 
-        // Apply sorting
+        // Sort filter
         if (sortFilter) {
-            filteredUsers.sort((a, b) => {
-                switch (sortFilter.value) {
-                    case 'Sort by: Name':
-                        return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
-                    case 'Sort by: Balance':
-                        return this.calculateUserBalance(b.id) - this.calculateUserBalance(a.id);
-                    case 'Sort by: Recent':
-                    default:
-                        return new Date(b.createdAt) - new Date(a.createdAt);
-                }
+            sortFilter.addEventListener('change', (e) => {
+                this.currentUsersFilters.sortBy = e.target.value;
+                this.currentUsersPage = 1; // Reset to first page when sorting
+                this.loadUsersTable();
             });
         }
-
-        this.displayFilteredUsers(filteredUsers);
     }
 
     /**
-     * Display filtered users in the table
+     * Setup add user button
      */
-    displayFilteredUsers(users) {
-        const tableBody = document.querySelector('.users-table tbody');
-        if (!tableBody) return;
-
-        tableBody.innerHTML = '';
-
-        if (users.length === 0) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-500);">
-                        No users found matching your criteria
-                    </td>
-                </tr>
-            `;
-            return;
+    setupAddUserButton() {
+        const addUserButton = document.querySelector('.admin-header .btn-primary');
+        if (addUserButton) {
+            addUserButton.addEventListener('click', () => {
+                this.showAddUserModal();
+            });
         }
+    }
 
-        users.forEach(user => {
-            const userRow = this.createUserRow(user);
-            tableBody.appendChild(userRow);
+    /**
+     * Show add user modal
+     */
+    showAddUserModal() {
+        const modalHTML = `
+            <div class="modal-overlay" id="addUserModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Add New User</h3>
+                        <button class="modal-close" onclick="adminManager.closeAddUserModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addUserForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="newFirstName">First Name</label>
+                                    <input type="text" id="newFirstName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newLastName">Last Name</label>
+                                    <input type="text" id="newLastName" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="newEmail">Email Address</label>
+                                <input type="email" id="newEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">Password</label>
+                                <input type="password" id="newPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newRole">Role</label>
+                                <select id="newRole">
+                                    <option value="user">User</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" onclick="adminManager.closeAddUserModal()">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Create User</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Setup form submission
+        const form = document.getElementById('addUserForm');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.createNewUser();
         });
-
-        this.updateUsersPagination(users.length);
     }
 
     /**
-     * Update users pagination info
+     * Close add user modal
      */
-    updateUsersPagination(totalUsers = null) {
-        const paginationInfo = document.querySelector('.pagination-info');
-        const userCount = totalUsers || this.users.length;
-        
-        if (paginationInfo) {
-            paginationInfo.textContent = `Showing 1-${userCount} of ${userCount} users`;
+    closeAddUserModal() {
+        const modal = document.getElementById('addUserModal');
+        if (modal) {
+            modal.remove();
         }
+    }
+
+    /**
+     * Create new user
+     */
+    async createNewUser() {
+        const firstName = document.getElementById('newFirstName').value;
+        const lastName = document.getElementById('newLastName').value;
+        const email = document.getElementById('newEmail').value;
+        const password = document.getElementById('newPassword').value;
+        const role = document.getElementById('newRole').value;
+
+        try {
+            // Check if user already exists
+            const existingUser = this.users.find(user => user.email === email);
+            if (existingUser) {
+                alert('A user with this email already exists.');
+                return;
+            }
+
+            // Create new user using auth manager
+            const result = await authManager.register({
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                password: password,
+                confirmPassword: password,
+                role: role
+            });
+
+            if (result.success) {
+                this.closeAddUserModal();
+                await this.loadAdminData(); // Reload data
+                await this.loadUsersTable(); // Refresh table
+                if (window.finSimApp) {
+                    finSimApp.showSuccess('User created successfully!');
+                }
+            } else {
+                alert('Failed to create user: ' + result.message);
+            }
+
+        } catch (error) {
+            console.error('Error creating user:', error);
+            alert('Error creating user. Please try again.');
+        }
+    }
+
+    /**
+     * Update users pagination
+     */
+    updateUsersPagination() {
+        const paginationInfo = document.querySelector('.pagination-info');
+        const paginationContainer = document.querySelector('.pagination');
+        
+        if (!paginationInfo || !paginationContainer) return;
+
+        const totalUsers = this.filteredUsers.length;
+        const totalPages = Math.ceil(totalUsers / this.usersPageSize);
+        const startUser = ((this.currentUsersPage - 1) * this.usersPageSize) + 1;
+        const endUser = Math.min(this.currentUsersPage * this.usersPageSize, totalUsers);
+
+        // Update pagination info
+        paginationInfo.textContent = `Showing ${startUser}-${endUser} of ${totalUsers} users`;
+
+        // Clear existing pagination
+        paginationContainer.innerHTML = '';
+
+        // Previous button
+        const prevButton = document.createElement('button');
+        prevButton.className = `pagination-btn ${this.currentUsersPage === 1 ? 'disabled' : ''}`;
+        prevButton.textContent = 'Previous';
+        prevButton.disabled = this.currentUsersPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (this.currentUsersPage > 1) {
+                this.currentUsersPage--;
+                this.loadUsersTable();
+            }
+        });
+        paginationContainer.appendChild(prevButton);
+
+        // Page numbers
+        const maxPagesToShow = 5;
+        let startPage = Math.max(1, this.currentUsersPage - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+        if (endPage - startPage + 1 < maxPagesToShow) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.className = `pagination-btn ${i === this.currentUsersPage ? 'active' : ''}`;
+            pageButton.textContent = i;
+            pageButton.addEventListener('click', () => {
+                this.currentUsersPage = i;
+                this.loadUsersTable();
+            });
+            paginationContainer.appendChild(pageButton);
+        }
+
+        // Next button
+        const nextButton = document.createElement('button');
+        nextButton.className = `pagination-btn ${this.currentUsersPage === totalPages ? 'disabled' : ''}`;
+        nextButton.textContent = 'Next';
+        nextButton.disabled = this.currentUsersPage === totalPages;
+        nextButton.addEventListener('click', () => {
+            if (this.currentUsersPage < totalPages) {
+                this.currentUsersPage++;
+                this.loadUsersTable();
+            }
+        });
+        paginationContainer.appendChild(nextButton);
     }
 
     /**
@@ -873,11 +1068,11 @@ class AdminManager {
         const dateInputs = document.querySelectorAll('.date-range input');
         const reportTypeSelect = document.querySelector('.report-type select');
 
-        // Date range change handler
+        // Date range change handler - update immediately
         dateInputs.forEach(input => {
             input.addEventListener('change', () => {
                 this.updateDateFilters();
-                this.generateReport();
+                this.generateReport(); // This will now update the report automatically
             });
         });
 
@@ -885,7 +1080,7 @@ class AdminManager {
         if (reportTypeSelect) {
             reportTypeSelect.addEventListener('change', (e) => {
                 this.currentFilters.reportType = e.target.value;
-                this.generateReport(); // This will update titles automatically
+                this.generateReport(); // This will update the report automatically
             });
 
             // Set initial report type
@@ -910,7 +1105,7 @@ class AdminManager {
         }
     }
 
-   /**
+    /**
      * Generate report based on filters
      */
     async generateReport() {
@@ -920,6 +1115,7 @@ class AdminManager {
         this.updateReportTitles(); // Add this line
         
         // Remove the success notification for automatic updates
+        // Only show notification for manual "Generate Report" button clicks
     }
 
     /**
@@ -1488,22 +1684,25 @@ Export generated by: ${this.currentAdmin.firstName} ${this.currentAdmin.lastName
     }
 
     /**
-     * User action methods (to be implemented in Phase 3)
+     * User action methods
      */
     editUser(userId) {
         console.log('✏️ Edit user:', userId);
         // Will be implemented in Phase 3
+        alert('Edit user functionality will be implemented in the next phase');
     }
 
     viewUser(userId) {
         console.log('👁️ View user:', userId);
         // Will be implemented in Phase 3
+        alert('View user functionality will be implemented in the next phase');
     }
 
     deleteUser(userId) {
         console.log('🗑️ Delete user:', userId);
         if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
             // Will be implemented in Phase 3
+            alert('Delete user functionality will be implemented in the next phase');
         }
     }
 
@@ -1554,7 +1753,7 @@ Export generated by: ${this.currentAdmin.firstName} ${this.currentAdmin.lastName
      */
     setupEventListeners() {
         console.log('🎯 Setting up admin event listeners...');
-        // Will be implemented in Phase 3
+        // Additional event listeners can be added here
     }
 
     /**
