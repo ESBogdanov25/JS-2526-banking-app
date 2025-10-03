@@ -14,6 +14,37 @@ class User {
         this.createdAt = userData.createdAt || new Date().toISOString();
         this.lastLogin = userData.lastLogin || null;
         this.isActive = userData.isActive !== undefined ? userData.isActive : true;
+        this.permissions = userData.permissions || this.getDefaultPermissions();
+    }
+
+     // Add this method to the User class
+    getDefaultPermissions() {
+        if (this.role === 'admin') {
+            return {
+                canViewUsers: true,
+                canManageUsers: true,
+                canViewTransactions: true,
+                canViewReports: true,
+                canManageSystem: true
+            };
+        }
+        return {
+            canViewUsers: false,
+            canManageUsers: false,
+            canViewTransactions: false,
+            canViewReports: false,
+            canManageSystem: false
+        };
+    }
+
+    // Add this method to check permissions
+    hasPermission(permission) {
+        return this.permissions[permission] || false;
+    }
+
+    // Add this method to check if user is admin
+    isAdmin() {
+        return this.role === 'admin';
     }
 
     generateId() {

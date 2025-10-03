@@ -26,7 +26,32 @@ class StorageManager {
             }
         });
 
+        this.createDefaultAdmin();
+
         console.log('💰 FinSim Storage Initialized');
+    }
+
+    createDefaultAdmin() {
+        const users = this.get('users', []);
+        const adminExists = users.some(user => user.role === 'admin');
+        
+        if (!adminExists) {
+            const defaultAdmin = new User({
+                email: 'admin@finsim.com',
+                password: 'admin123',
+                firstName: 'System',
+                lastName: 'Administrator',
+                role: 'admin'
+            });
+            
+            // Hash the password using your existing auth system
+            authManager.hashPassword('admin123').then(hashedPassword => {
+                defaultAdmin.password = hashedPassword;
+                users.push(defaultAdmin.toJSON());
+                this.set('users', users);
+                console.log('👑 Default admin user created');
+            });
+        }
     }
 
     /**

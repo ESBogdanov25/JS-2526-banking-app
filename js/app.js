@@ -63,6 +63,38 @@ class FinSimApp {
     }
 
     /**
+     * Enhanced routing with admin protection
+     */
+    async routeToCurrentPage() {
+        const currentPath = window.location.pathname;
+        const isAuthPage = currentPath.includes('/auth/');
+        const isDashboardPage = currentPath.includes('/dashboard/');
+        const isAdminPage = currentPath.includes('/admin/');
+
+        try {
+            if (this.auth.isAuthenticated()) {
+                // User is logged in
+                if (isAuthPage) {
+                    await this.navigateTo('/dashboard/dashboard.html');
+                }
+                
+                // Admin route protection
+                if (isAdminPage && !this.auth.isAdmin()) {
+                    await this.showError('Admin access required');
+                    await this.navigateTo('/dashboard/dashboard.html');
+                }
+            } else {
+                // User is not logged in
+                if (isDashboardPage || isAdminPage) {
+                    await this.navigateTo('/auth/login.html');
+                }
+            }
+        } catch (error) {
+            console.error('❌ Routing error:', error);
+        }
+    }
+
+    /**
      * Setup core application components
      */
     async setupApplication() {

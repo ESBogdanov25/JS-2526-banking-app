@@ -2,7 +2,6 @@
  * FinSim - Professional Authentication System
  * Enterprise-grade async/await patterns with proper error handling
  */
-
 class AuthManager {
     constructor() {
         this.storage = storage;
@@ -28,6 +27,37 @@ class AuthManager {
             console.error('❌ Auth initialization failed:', error);
             this.currentUser = null;
         }
+    }
+
+    /**
+     * Check if current user is admin
+     */
+    isAdmin() {
+        return this.isAuthenticated() && this.currentUser.role === 'admin';
+    }
+
+    /**
+     * Get admin dashboard data
+     */
+    async getAdminDashboardData() {
+        if (!this.isAdmin()) {
+            throw new Error('Admin access required');
+        }
+
+        const users = storage.get('users', []);
+        const accounts = storage.get('accounts', []);
+        const transactions = storage.get('transactions', []);
+
+        return {
+            totalUsers: users.length,
+            totalAccounts: accounts.length,
+            totalTransactions: transactions.length,
+            activeUsers: users.filter(user => user.isActive).length,
+            totalBalance: accounts.reduce((sum, account) => sum + account.balance, 0),
+            recentRegistrations: users
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 5)
+        };
     }
 
     /**
