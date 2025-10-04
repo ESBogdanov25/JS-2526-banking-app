@@ -396,6 +396,409 @@ class AdminManager {
     }
 
     /**
+     * Edit user - show edit modal
+     */
+    editUser(userId) {
+        console.log('✏️ Edit user:', userId);
+        this.showEditUserModal(userId);
+    }
+
+    /**
+     * Show edit user modal
+     */
+    showEditUserModal(userId) {
+        const user = this.users.find(u => u.id === userId);
+        if (!user) {
+            alert('User not found!');
+            return;
+        }
+
+        const modalHTML = `
+            <div class="modal-overlay" id="editUserModal" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            ">
+                <div class="modal-content" style="
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 12px;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                    max-width: 500px;
+                    width: 90%;
+                ">
+                    <div class="modal-header" style="margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--gray-900);">Edit User: ${user.firstName} ${user.lastName}</h3>
+                        <p style="margin: 0; color: var(--gray-600); font-size: 0.875rem;">User ID: ${user.id}</p>
+                    </div>
+                    
+                    <form id="editUserForm">
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label for="editFirstName" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">First Name</label>
+                                <input type="text" id="editFirstName" value="${user.firstName}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px;" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editLastName" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Last Name</label>
+                                <input type="text" id="editLastName" value="${user.lastName}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px;" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label for="editEmail" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Email</label>
+                            <input type="email" id="editEmail" value="${user.email}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px;" required>
+                        </div>
+                        
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="form-group">
+                                <label for="editRole" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Role</label>
+                                <select id="editRole" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+                                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editStatus" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Status</label>
+                                <select id="editStatus" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+                                    <option value="active" ${user.isActive ? 'selected' : ''}>Active</option>
+                                    <option value="inactive" ${!user.isActive ? 'selected' : ''}>Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="modal-actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                            <button type="button" class="btn btn-secondary" id="cancelEditUser" style="
+                                padding: 0.75rem 1.5rem;
+                                border: 1px solid var(--gray-300);
+                                background: white;
+                                color: var(--gray-700);
+                                border-radius: 8px;
+                                font-weight: 500;
+                                cursor: pointer;
+                            ">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary" style="
+                                padding: 0.75rem 1.5rem;
+                                background: var(--primary-color);
+                                color: white;
+                                border: none;
+                                border-radius: 8px;
+                                font-weight: 500;
+                                cursor: pointer;
+                            ">
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Setup event listeners
+        const cancelBtn = document.getElementById('cancelEditUser');
+        const form = document.getElementById('editUserForm');
+        const modal = document.getElementById('editUserModal');
+
+        // Cancel button - close modal
+        cancelBtn.addEventListener('click', () => {
+            modal.remove();
+        });
+
+        // Form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveUserChanges(userId);
+        });
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    /**
+     * Save user changes
+     */
+    async saveUserChanges(userId) {
+        const firstName = document.getElementById('editFirstName').value;
+        const lastName = document.getElementById('editLastName').value;
+        const email = document.getElementById('editEmail').value;
+        const role = document.getElementById('editRole').value;
+        const status = document.getElementById('editStatus').value;
+
+        try {
+            // Check if email is already taken by another user
+            const existingUser = this.users.find(u => u.email === email && u.id !== userId);
+            if (existingUser) {
+                alert('This email is already taken by another user!');
+                return;
+            }
+
+            // Update user in storage
+            const userIndex = this.users.findIndex(u => u.id === userId);
+            if (userIndex !== -1) {
+                this.users[userIndex] = {
+                    ...this.users[userIndex],
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email,
+                    role: role,
+                    isActive: status === 'active'
+                };
+
+                // Save to storage
+                storage.set('users', this.users);
+
+                // Close modal
+                const modal = document.getElementById('editUserModal');
+                if (modal) modal.remove();
+
+                // Refresh table
+                await this.loadUsersTable();
+
+                // Show success message
+                if (window.finSimApp) {
+                    finSimApp.showSuccess('User updated successfully!');
+                }
+            }
+        } catch (error) {
+            console.error('Error updating user:', error);
+            alert('Error updating user. Please try again.');
+        }
+    }
+
+    /**
+     * View user details
+     */
+    viewUser(userId) {
+        console.log('👁️ View user:', userId);
+        this.showUserDetailsModal(userId);
+    }
+
+    /**
+     * Show user details modal
+     */
+    showUserDetailsModal(userId) {
+        const user = this.users.find(u => u.id === userId);
+        if (!user) {
+            alert('User not found!');
+            return;
+        }
+
+        // Get user accounts
+        const userAccounts = this.accounts.filter(account => account.userId === userId);
+        const totalBalance = userAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+        
+        // Get user transactions
+        const userTransactions = this.transactions.filter(txn => {
+            const accountIds = userAccounts.map(acc => acc.id);
+            return accountIds.includes(txn.accountId);
+        });
+
+        const modalHTML = `
+            <div class="modal-overlay" id="viewUserModal" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            ">
+                <div class="modal-content" style="
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 12px;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                    max-width: 600px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                ">
+                    <div class="modal-header" style="margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--gray-900);">User Details: ${user.firstName} ${user.lastName}</h3>
+                        <p style="margin: 0; color: var(--gray-600); font-size: 0.875rem;">User ID: ${user.id}</p>
+                    </div>
+                    
+                    <div class="user-details" style="margin-bottom: 2rem;">
+                        <div class="detail-section" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin: 0 0 1rem 0; color: var(--gray-800);">Personal Information</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <strong>Name:</strong> ${user.firstName} ${user.lastName}
+                                </div>
+                                <div>
+                                    <strong>Email:</strong> ${user.email}
+                                </div>
+                                <div>
+                                    <strong>Role:</strong> <span class="role-badge ${user.role}">${user.role}</span>
+                                </div>
+                                <div>
+                                    <strong>Status:</strong> <span class="status-badge ${user.isActive ? 'active' : 'inactive'}">${user.isActive ? 'Active' : 'Inactive'}</span>
+                                </div>
+                                <div>
+                                    <strong>Joined:</strong> ${new Date(user.createdAt).toLocaleDateString()}
+                                </div>
+                                <div>
+                                    <strong>Last Login:</strong> ${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin: 0 0 1rem 0; color: var(--gray-800);">Financial Summary</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <strong>Total Balance:</strong> ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalBalance)}
+                                </div>
+                                <div>
+                                    <strong>Accounts:</strong> ${userAccounts.length}
+                                </div>
+                                <div>
+                                    <strong>Transactions:</strong> ${userTransactions.length}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                            <h4 style="margin: 0 0 1rem 0; color: var(--gray-800);">Accounts</h4>
+                            ${userAccounts.length > 0 ? 
+                                userAccounts.map(account => `
+                                    <div style="padding: 0.75rem; background: var(--gray-50); border-radius: 6px; margin-bottom: 0.5rem;">
+                                        <strong>${this.getAccountTypeDisplay(account.type)}</strong><br>
+                                        <small>${account.maskedAccountNumber} - ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(account.balance)}</small>
+                                    </div>
+                                `).join('') : 
+                                '<p style="color: var(--gray-500);">No accounts found</p>'
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions" style="display: flex; justify-content: flex-end;">
+                        <button class="btn btn-primary" id="closeViewUser" style="
+                            padding: 0.75rem 1.5rem;
+                            background: var(--primary-color);
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-weight: 500;
+                            cursor: pointer;
+                        ">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Setup event listener
+        const closeBtn = document.getElementById('closeViewUser');
+        const modal = document.getElementById('viewUserModal');
+
+        closeBtn.addEventListener('click', () => {
+            modal.remove();
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    /**
+     * Delete user with confirmation
+     */
+    async deleteUser(userId) {
+        console.log('🗑️ Delete user:', userId);
+        
+        const user = this.users.find(u => u.id === userId);
+        if (!user) {
+            alert('User not found!');
+            return;
+        }
+
+        // Prevent deleting yourself
+        if (user.id === this.currentAdmin.id) {
+            alert('You cannot delete your own account!');
+            return;
+        }
+
+        if (confirm(`Are you sure you want to delete user "${user.firstName} ${user.lastName}"?\n\nThis will also delete all their accounts and transactions. This action cannot be undone!`)) {
+            await this.performUserDeletion(userId);
+        }
+    }
+
+    /**
+     * Perform user deletion
+     */
+    async performUserDeletion(userId) {
+        try {
+            // Remove user accounts
+            this.accounts = this.accounts.filter(account => account.userId !== userId);
+            
+            // Remove user transactions
+            const userAccountIds = this.accounts.filter(acc => acc.userId === userId).map(acc => acc.id);
+            this.transactions = this.transactions.filter(txn => !userAccountIds.includes(txn.accountId));
+            
+            // Remove user
+            this.users = this.users.filter(user => user.id !== userId);
+            
+            // Save all changes to storage
+            storage.set('users', this.users);
+            storage.set('accounts', this.accounts);
+            storage.set('transactions', this.transactions);
+            
+            // Refresh the table
+            await this.loadUsersTable();
+            
+            // Show success message
+            if (window.finSimApp) {
+                finSimApp.showSuccess('User deleted successfully!');
+            }
+            
+            console.log('✅ User deleted:', userId);
+            
+        } catch (error) {
+            console.error('❌ Error deleting user:', error);
+            if (window.finSimApp) {
+                finSimApp.showError('Failed to delete user. Please try again.');
+            }
+        }
+    }
+
+    /**
+     * Get display name for account type
+     */
+    getAccountTypeDisplay(type) {
+        const types = {
+            'checking': 'Checking Account',
+            'savings': 'Savings Account',
+            'investment': 'Investment Account'
+        };
+        return types[type] || type;
+    }
+
+    /**
      * Calculate total balance for a user
      */
     calculateUserBalance(userId) {
@@ -1814,29 +2217,6 @@ Export generated by: ${this.currentAdmin.firstName} ${this.currentAdmin.lastName
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    }
-
-    /**
-     * User action methods
-     */
-    editUser(userId) {
-        console.log('✏️ Edit user:', userId);
-        // Will be implemented in Phase 3
-        alert('Edit user functionality will be implemented in the next phase');
-    }
-
-    viewUser(userId) {
-        console.log('👁️ View user:', userId);
-        // Will be implemented in Phase 3
-        alert('View user functionality will be implemented in the next phase');
-    }
-
-    deleteUser(userId) {
-        console.log('🗑️ Delete user:', userId);
-        if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-            // Will be implemented in Phase 3
-            alert('Delete user functionality will be implemented in the next phase');
-        }
     }
 
     /**
