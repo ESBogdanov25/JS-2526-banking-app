@@ -266,7 +266,7 @@ This project is licensed under the **MIT License** - see the LICENSE file for de
 ## 👨‍💻 Author
 **Emil Bogdanov**  
 - GitHub: [@ESBogdanov25](https://github.com/ESBogdanov25)  
-- LinkedIn: Emil Bogdanov  
+- LinkedIn: [Emil Bogdanov](https://www.linkedin.com/in/emil-bogdanov-a304b62a0/)  
 
 ---
 
