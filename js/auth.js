@@ -81,6 +81,32 @@ class AuthManager {
     }
 
     /**
+     * Check if current user is admin and update admin-specific UI
+     */
+    async updateAdminUI() {
+        if (!this.isAuthenticated()) return;
+
+        const adminElements = document.querySelectorAll('[data-admin-only="true"]');
+        const isAdmin = this.isAdmin();
+        
+        adminElements.forEach(element => {
+            element.style.display = isAdmin ? '' : 'none';
+        });
+        
+        // Also update any admin-specific text or indicators
+        const adminIndicators = document.querySelectorAll('[data-admin-indicator]');
+        adminIndicators.forEach(element => {
+            if (isAdmin) {
+                element.classList.add('admin-visible');
+                element.classList.remove('admin-hidden');
+            } else {
+                element.classList.add('admin-hidden');
+                element.classList.remove('admin-visible');
+            }
+        });
+    }
+
+    /**
      * Register a new user with comprehensive validation
      */
     async register(userData) {
@@ -131,6 +157,8 @@ class AuthManager {
 
             // Update session
             await this.updateUserSession(user);
+
+            await this.updateAdminUI();
             
             console.log('🔐 User login successful:', user.email);
             
@@ -162,6 +190,11 @@ class AuthManager {
             
             this.currentUser = null;
             await this.storage.set('currentUser', null);
+            
+            const adminElements = document.querySelectorAll('[data-admin-only="true"]');
+            adminElements.forEach(element => {
+                element.style.display = 'none';
+            });
             
             return {
                 success: true,

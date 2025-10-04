@@ -17,10 +17,12 @@
                 <a href="../index.html"><h1>FinSim</h1></a>
             </div>
             <div class="nav-links">
+
                 <a href="dashboard.html" class="nav-link active" data-nav="/dashboard/dashboard.html">Dashboard</a>
                 <a href="accounts.html" class="nav-link" data-nav="/dashboard/accounts.html">Accounts</a>
                 <a href="transfer.html" class="nav-link" data-nav="/dashboard/transfer.html">Transfer</a>
                 <a href="transactions.html" class="nav-link" data-nav="/dashboard/transactions.html">Transactions</a>
+                <a href="../admin/admin.html" class="nav-link" data-nav="/admin/admin.html" data-auth-ui="authenticated" data-admin-only="true" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">Admin Dashboard</a>
                 <a href="../auth/login.html" class="nav-link" data-logout="true" data-auth-ui="authenticated">Logout</a>
             </div>
         </nav>
@@ -49,6 +51,9 @@
                     </a>
                     <a href="transactions.html" class="nav-item" data-nav="/dashboard/transactions.html">
                         <span>📝</span> Transactions
+                    </a>
+                    <a href="../admin/admin.html" class="nav-item" data-nav="/admin/admin.html" data-admin-only="true" style="display: none;">
+                        <span>👑</span> Admin Dashboard
                     </a>
                     <a href="../auth/login.html" class="nav-item" data-logout="true" data-auth-ui="authenticated">
                         <span>🚪</span> Logout
